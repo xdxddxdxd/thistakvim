@@ -1,0 +1,128 @@
+.shell { max-width: 1400px; width: calc(100% - 56px); margin: 26px auto; padding: 28px 36px; border: 2px solid var(--ink); border-radius: 30px; background: var(--paper); min-height: calc(100dvh - 52px); color: var(--ink); }
+.shell section { min-width: 0; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding-bottom: 24px; }
+.header h1 { font-size: 42px; margin: 4px 0 0; line-height: 1.15; }
+.back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.back:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.period { display: flex; align-items: center; gap: 24px; }
+.scope { display: flex; border: 2px solid var(--ink); border-radius: 12px; overflow: hidden; }
+.scope button { min-height: 44px; padding: 0 20px; font-weight: 650; }
+.scope button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.weekControls { display: flex; align-items: center; gap: 12px; }
+.weekControls > div { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 205px; }
+.weekControls span { font-size: 13px; font-variant-numeric: tabular-nums; }
+.weekControls > div button { min-height: 32px; font-size: 12px; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.weekControls > div button:disabled { color: var(--muted); text-decoration: none; }
+.generalPeriod { min-width: 290px; text-align: center; font-size: 14px; }
+.sections { display: flex; gap: 4px; border-bottom: 2px solid var(--ink); margin-bottom: 24px; }
+.sections button { min-height: 48px; padding: 0 20px; border-radius: 12px 12px 0 0; font-weight: 650; font-size: 14px; }
+.sections button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.sections button:hover:not([aria-pressed="true"]) { background: var(--input); }
+.summary { display: flex; align-items: center; justify-content: space-between; gap: 40px; border: 2px solid var(--ink); border-radius: 20px; box-shadow: 3px 4px 0 var(--ink); padding: 24px; margin-bottom: 32px; }
+.shell h2 { font-size: 24px; line-height: 1.25; margin: 0; }
+.summaryCopy { max-width: 550px; }
+.summaryCopy p { margin: 12px 0 0; font-size: 14px; line-height: 1.75; }
+.totals { display: grid; grid-template-columns: repeat(4, 1fr); flex-shrink: 0; }
+.totals > * { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 16px; border-left: 1px solid var(--rule); min-height: 70px; }
+.totals strong { font-family: var(--display); font-weight: 600; font-size: 30px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.totals span { font-size: 11px; color: var(--muted); margin-top: 6px; }
+.totals button:hover { background: var(--input); border-radius: 8px; }
+.overview { display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; }
+.comparison { border-left: 1px solid var(--rule); padding-left: 36px; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 12px; }
+.sectionHeading > span { color: var(--muted); font-size: 12px; flex-shrink: 0; }
+.caption { font-size: 12px; line-height: 1.7; color: var(--muted); margin: 12px 0; }
+.tableScroll { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.table th { text-align: left; font-weight: 600; }
+.table thead th { color: var(--muted); font-size: 11px; padding: 10px 12px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+.table thead th:first-child, .table tbody th { padding-left: 0; }
+.table td { padding: 5px 12px; text-align: right; }
+.table tbody th { padding-top: 12px; padding-bottom: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.table tbody tr { border-bottom: 1px solid var(--rule); }
+.table thead th:not(:first-child) { text-align: right; }
+.table small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 2px; }
+.count { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 44px; min-height: 44px; border-radius: 8px; font-weight: 650; padding: 0 4px; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 4px; }
+.count svg { opacity: .55; }
+.count:hover { background: var(--input); text-decoration-color: var(--ink); }
+.zero { display: inline-block; padding-right: 20px; color: var(--muted); }
+.dayCount { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.bar { width: 70px; height: 6px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--ink); }
+.dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid #0002; display: inline-block; flex-shrink: 0; }
+.categoryName { display: flex; align-items: center; gap: 8px; }
+.courseSections { display: grid; gap: 32px; }
+.matrix { min-width: 650px; }
+.matrix tbody th { min-width: 150px; }
+.matrix th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; border-right: 1px solid var(--rule); }
+.matrix abbr { text-decoration: none; }
+.courseWeights { list-style: none; padding: 0; margin: 0; }
+.courseWeights li { border-bottom: 1px solid var(--rule); }
+.courseWeights button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 0; min-height: 48px; font-size: 14px; text-align: left; }
+.courseWeights button:hover { background: var(--input); }
+.courseWeights strong { margin-left: auto; }
+.resultControls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.resultControls p { font-size: 13px; color: var(--muted); margin: 0; }
+.resultControls button { font-size: 12px; }
+.tasks { list-style: none; padding: 0; margin: 0; }
+.tasks li { border-bottom: 1px solid var(--rule); }
+.tasks a { display: flex; align-items: center; gap: 16px; padding: 16px 12px; border-radius: 10px; color: inherit; text-decoration: none; transition: background 160ms, transform 160ms; }
+.tasks a:hover { background: var(--input); transform: translateX(2px); }
+.tasks a > svg { margin-left: auto; flex-shrink: 0; }
+.taskStatus { display: grid; place-items: center; width: 23px; height: 23px; border: 2px solid var(--ink); border-radius: 7px; flex-shrink: 0; }
+.done { background: var(--ink); color: var(--paper); }
+.taskText { display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.taskText strong { font-size: 15px; }
+.taskText > span { font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+.taskText small { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+.more { display: flex; margin: 24px auto 0; }
+.empty, .message { padding: 36px 12px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.message { min-height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.footnote { border-top: 1px solid var(--rule); margin: 28px 0 0; padding-top: 16px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+@media (max-width: 1200px) {
+  .shell { width: auto; margin: 20px; padding: 24px; min-height: calc(100dvh - 40px); }
+  .summary { gap: 24px; }
+  .totals > * { padding: 8px 12px; }
+  .bar { width: 40px; }
+}
+@media (max-width: 950px) {
+  .summary { align-items: flex-start; flex-direction: column; }
+  .summaryCopy { max-width: none; }
+  .totals { width: 100%; }
+  .totals > :first-child { border-left: 0; }
+  .period { gap: 16px; flex-direction: column; }
+  .overview { gap: 24px; }
+  .comparison { padding-left: 24px; }
+  .bar { display: none; }
+  .table td, .table thead th { padding-left: 6px; padding-right: 6px; }
+}
+@media (max-width: 650px) {
+  .shell { margin: 8px; padding: 16px; border-radius: 22px; min-height: calc(100dvh - 16px); }
+  .header { align-items: flex-start; flex-direction: column; gap: 20px; padding-bottom: 20px; }
+  .header h1 { font-size: 36px; }
+  .period { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .scope { width: 100%; }
+  .scope button { flex: 1; }
+  .weekControls { width: 100%; justify-content: space-between; gap: 8px; }
+  .weekControls > div { min-width: 0; }
+  .weekControls span { font-size: 12px; }
+  .generalPeriod { min-width: 0; }
+  .sections { gap: 0; margin-bottom: 20px; }
+  .sections button { padding: 0 8px; font-size: 12px; flex: 1; }
+  .summary { padding: 16px; gap: 16px; border-radius: 16px; margin-bottom: 28px; }
+  .shell h2 { font-size: 22px; }
+  .summaryCopy p { font-size: 13px; }
+  .totals > * { padding: 8px 4px; min-height: 60px; }
+  .totals strong { font-size: 25px; }
+  .totals span { font-size: 10px; }
+  .overview { display: flex; flex-direction: column; gap: 28px; }
+  .comparison { padding-left: 0; padding-top: 24px; border-left: 0; border-top: 1px solid var(--rule); }
+  .table { font-size: 12px; }
+  .table thead th { font-size: 10px; }
+  .sectionHeading { align-items: flex-start; gap: 12px; }
+  .sectionHeading > span { font-size: 11px; padding-top: 5px; }
+  .resultControls { align-items: flex-start; flex-direction: column; }
+  .tasks a { padding: 14px 0; gap: 10px; }
+  .taskText small { line-height: 1.5; }
+}
+@media (prefers-reduced-motion: reduce) { .tasks a { transition: none; } .tasks a:hover { transform: none; } }

@@ -1,0 +1,19 @@
+.form { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--rule); }
+.heading { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.heading h3 { font-size: 18px; }
+.heading > span { margin-left: auto; font-size: 10px; color: var(--muted); }
+.controls { display: flex; align-items: flex-end; gap: 8px; }
+.controls label { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; font-size: 11px; font-weight: 600; }
+.controls input { width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); color: var(--ink); text-align: center; padding: 8px; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.controls input:disabled { color: var(--muted); }
+.separator { min-height: 44px; display: flex; align-items: center; font-size: 19px; }
+.controls .save { padding: 10px 12px; font-size: 12px; gap: 6px; margin-bottom: 2px; min-width: 85px; }
+.status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 30px; padding-top: 8px; font-size: 10px; color: var(--muted); line-height: 1.5; }
+.status [role="alert"] { color: var(--danger); }
+.caption { margin: 0 0 12px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.recorded { margin: 6px 0 8px; font-family: var(--display); font-size: 25px; font-weight: 550; font-variant-numeric: tabular-nums; }
+.cancel { margin-top: 8px; min-height: 40px; font-size: 12px; }
+.conflict { padding: 12px 0; font-size: 12px; line-height: 1.6; }
+.conflict > div { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.conflict button { min-height: 44px; padding: 8px 10px; font-size: 12px; }
+@media (max-width: 767px) { .form { margin-top: 16px; } .controls input { font-size: 16px; } }
