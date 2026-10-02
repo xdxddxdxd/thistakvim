@@ -2,6 +2,7 @@ import { serverClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ArrowDown, ArrowRight, Check, Clock3, FileDown, Moon } from "lucide-react";
 import LoginForm from "@/components/LoginForm";
+import { loginErrorMessage } from "@/lib/login";
 import styles from "./page.module.css";
 
 const exampleWeek = [
@@ -15,12 +16,13 @@ const exampleWeek = [
 ];
 
 export const dynamic = "force-dynamic";
-export default async function Login() {
+export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const client = await serverClient();
   const {
     data: { user },
   } = await client.auth.getUser();
   if (user) redirect("/");
+  const params = await searchParams;
   return (
     <main className={styles.landing} id="sayfa-basi">
       <a className={styles.skipLink} href="#giris">Giriş formuna geç</a>
@@ -52,7 +54,7 @@ export default async function Login() {
           <section className={`login-card ${styles.signIn}`} id="giris" tabIndex={-1} aria-labelledby="login-heading">
             <h2 id="login-heading">Hoş geldin.</h2>
             <p>Haftalık planına kaldığın yerden devam et.</p>
-            <LoginForm />
+            <LoginForm initialError={loginErrorMessage(params.error)} />
             <div className={styles.signInNote}>Planla. Yap. İşaretle.</div>
           </section>
         </section>

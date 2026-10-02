@@ -1,9 +1,9 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
-export default function LoginForm() {
+export default function LoginForm({ initialError = "" }: { initialError?: string }) {
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
+    [error, setError] = useState(initialError),
     [show, setShow] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,7 +30,7 @@ export default function LoginForm() {
     }
   }
   return (
-    <form onSubmit={submit} className="login-form">
+    <form action="/api/auth/login" method="post" onSubmit={submit} className="login-form">
       <label>
         Kullanıcı adı
         <input
