@@ -144,7 +144,7 @@ export default function Planner({
       (s) => s.date === selected && s.is_finished,
     ),
     locked = isLocked(selected, finished, new Date(currentTime)) || lockedNoteDate === selected;
-  const working = busy || loading || studySaving;
+  const working = busy || loading || studySaving || taskBusy;
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, {
@@ -405,9 +405,10 @@ export default function Planner({
     return operation;
   }, [draftStorage, lockedNoteDate, noteConflict]);
   async function persistDay() {
+    if (taskBusyRef.current) return false;
     if (!(await persistNote())) return false;
     if (!locked && noteRef.current.content !== noteRef.current.saved && !(await persistNote())) return false;
-    return studyRef.current?.canLeave() ?? true;
+    return !taskBusyRef.current && (studyRef.current?.canLeave() ?? true);
   }
   useEffect(() => {
     if (note.content === note.saved || busy || loading || locked || noteFailed)

@@ -54,6 +54,16 @@ export async function POST(request: Request) {
     !body.data
   )
     return NextResponse.json({ error: "Geçersiz işlem." }, { status: 400 });
+  if (
+    ["edit", "toggle", "delete", "move", "copy"].includes(body.action) &&
+    (typeof body.data.updated_at !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(body.data.updated_at) ||
+      !Number.isFinite(Date.parse(body.data.updated_at)))
+  )
+    return NextResponse.json(
+      { error: "Görev işlemi için güncel kayıt gerekli. Planı yenileyip tekrar dene." },
+      { status: 400 },
+    );
   if (body.action === "note" && (!validDate(body.data.date) || typeof body.data.content !== "string" || body.data.content.length > 500 || !Number.isSafeInteger(body.data.revision) || body.data.revision < 0))
     return NextResponse.json({ error: "Notu kaydetmek için güncel kayıt gerekli." }, { status: 400 });
   const { data, error } = body.action === "note"
@@ -67,6 +77,7 @@ export async function POST(request: Request) {
       "Hedef gün",
       "Yarın tamamlanmış",
       "Görev başka",
+      "Görev işlemi",
       "Sıralama değişti",
       "Geri alma süresi",
       "En az bir",

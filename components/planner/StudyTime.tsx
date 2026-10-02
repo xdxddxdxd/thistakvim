@@ -71,6 +71,13 @@ export default function StudyTime({ date, editable, ref, onSaving, disabled = fa
       setSaveError(error instanceof Error ? error.message : "Çalışma süresi kaydedilemedi. Tekrar dene.");
     } finally { pending.current = false; setSaving(false); onSaving(false); }
   }
+  function discardChanges() {
+    const current = conflict ?? { minutes: saved, revision };
+    setSaved(current.minutes); setRevision(current.revision);
+    setHours(current.minutes === null ? "" : String(Math.floor(current.minutes / 60)));
+    setMinutes(current.minutes === null ? "" : String(current.minutes % 60));
+    setConflict(null); setSaveError("");
+  }
   useImperativeHandle(ref, () => ({ canLeave: () => {
     if (pending.current) return false;
     if (!canEdit || (!dirty && !conflict)) return true;
@@ -105,16 +112,11 @@ export default function StudyTime({ date, editable, ref, onSaving, disabled = fa
         </button>
       </div>
     </>}
-    {dirty && <button className={"text-button " + styles.cancel} type="button" disabled={saving || disabled} onClick={() => { setHours(saved === null ? "" : String(Math.floor(saved / 60))); setMinutes(saved === null ? "" : String(saved % 60)); setSaveError(""); }}>Vazgeç</button>}
+    {(dirty || conflict) && <button className={"text-button " + styles.cancel} type="button" disabled={saving || disabled} onClick={discardChanges}>Vazgeç</button>}
     {conflict && canEdit && <div className={styles.conflict}>
       <p>Güncel süre: {conflict.minutes === null ? "Henüz kaydedilmedi" : studyTimeLabel(conflict.minutes)}</p>
       <div>
-        <button className="button secondary" type="button" disabled={saving || disabled} onClick={() => {
-          setSaved(conflict.minutes); setRevision(conflict.revision);
-          setHours(conflict.minutes === null ? "" : String(Math.floor(conflict.minutes / 60)));
-          setMinutes(conflict.minutes === null ? "" : String(conflict.minutes % 60));
-          setConflict(null); setSaveError("");
-        }}>Güncel süreyi kullan</button>
+        <button className="button secondary" type="button" disabled={saving || disabled} onClick={discardChanges}>Güncel süreyi kullan</button>
         <button className="button primary" type="button" disabled={saving || disabled} onClick={() => void save(conflict.revision)}>Değerimi kaydet</button>
       </div>
     </div>}
