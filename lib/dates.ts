@@ -1,4 +1,5 @@
 export const TIMEZONE = "Europe/Istanbul";
+export const TYT_EXAM_DATE = "2027-06-19";
 const todayFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit",
 });
@@ -11,6 +12,11 @@ export function today(now = new Date()): string {
 }
 export function dateObject(value: string) {
   return new Date(`${value}T12:00:00Z`);
+}
+export function tytDaysRemaining(currentDate = today()): number {
+  return Math.max(0, Math.round(
+    (dateObject(TYT_EXAM_DATE).getTime() - dateObject(currentDate).getTime()) / 86400000,
+  ));
 }
 export function addDays(value: string, count: number): string {
   const date = dateObject(value);

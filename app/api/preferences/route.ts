@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   if (
     !body ||
-    !["paper", "monochrome"].includes(body.theme) ||
+    !["paper", "monochrome", "dark"].includes(body.theme) ||
     !Array.isArray(body.colors) ||
     body.colors.length > 100 ||
     body.colors.some(

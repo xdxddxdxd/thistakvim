@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { serverClient } from "@/lib/supabase/server";
 import { addDays, weekStart } from "@/lib/dates";
-import { createWeekPdf } from "@/lib/week-pdf";
+import { createWeekPdf, WeekPdfDensityError } from "@/lib/week-pdf";
 import type { Task } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -46,17 +46,16 @@ export async function GET(request: Request) {
         if (result.data.length < 1000) return rows;
       }
     }
-    const [tasks, notes, categories, profile] = await Promise.all([
+    const [tasks, categories, profile] = await Promise.all([
       readTasks(),
-      client.from("day_notes").select("*").gte("date", start).lte("date", end),
       client.from("categories").select("*").order("position"),
       client.from("profiles").select("theme").eq("id", user.id).single(),
     ]);
-    if (notes.error || categories.error || profile.error)
+    if (categories.error || profile.error)
       throw new Error("Read failed");
     const pdf = await createWeekPdf(
       start,
-      { tasks, notes: notes.data, statuses: [] },
+      { tasks, notes: [], statuses: [] },
       categories.data,
       profile.data.theme,
     );
@@ -68,7 +67,9 @@ export async function GET(request: Request) {
         "X-Content-Type-Options": "nosniff",
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof WeekPdfDensityError)
+      return NextResponse.json({ error: error.message }, { status: 422 });
     return NextResponse.json(
       { error: "Haftanın PDF’si hazırlanamadı. Tekrar dene." },
       { status: 500 },

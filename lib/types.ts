@@ -1,4 +1,4 @@
-export type Theme = "paper" | "monochrome";
+export type Theme = "paper" | "monochrome" | "dark";
 export type Category = {
   id: string;
   user_id: string;

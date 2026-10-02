@@ -45,9 +45,11 @@ npm start
 - Fare, dokunma ve klavyeyle sıralama; başka güne bırakınca kopyalama veya taşıma seçimi.
 - Günlük not ve gerçekleşmiş toplam çalışma süresi. Süre aynı gün tekrar düzenlenebilir; gelecek güne süre girilemez.
 - İstanbul saatine göre 23:59’da gün kapanışı; geçmiş günlerin görev, not ve süre kayıtları salt okunur.
-- Profilde Kâğıt / Siyah beyaz temaları ve ders renkleri.
-- Yalnız seçili haftanın PDF’si; Türkçe fontlar, görevler, açıklamalar ve notlar.
+- Profilde Açık / Koyu temaları ve iki temada da korunan ders renkleri.
+- Başlığın altında 19 Haziran 2027 hedef tarihine kalan gün, YKS sayacı olarak gösterilir; İstanbul tarihine göre güncellenir.
+- Yalnız seçili haftanın tek sayfa A4 yatay PDF’si; yedi gün yan yana, Türkçe fontlarla görev başlıkları ve ders adları. Yoğun haftalarda ortak punto küçülür; okunaklı sığmayan içerik açık bir hata verir.
 - Ayrı `/analiz` sayfasında hafta özeti, gün ve ders dağılımları, ders × gün tablosu, başlık kullanımı, kalan görevler ve önceki haftayla karşılaştırma.
+- Analizde toplam çalışma süresi, günlük süre dağılımı ve önceki haftanın süresiyle karşılaştırma. Süre girilmeyen günler 0 dakika kaydedilen günlerden ayrı gösterilir.
 - Analizden ilgili göreve geçiş; seçili tarih ve analiz filtrelerinin URL’de korunması.
 - Başka cihazdaki değişikliklere karşı not ve çalışma süresinde sürüm kontrolü.
 

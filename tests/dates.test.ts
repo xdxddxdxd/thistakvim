@@ -4,6 +4,7 @@ import {
   addDays,
   isLocked,
   today,
+  tytDaysRemaining,
   weekDates,
   weekLabel,
   weekStart,
@@ -22,6 +23,14 @@ test("Monday starts and year/month boundaries use real dates", () => {
     "2026-01-04",
   ]);
   assert.match(weekLabel("2025-12-29"), /2025.*2026/);
+});
+test("TYT countdown uses Istanbul calendar days and stops at zero", () => {
+  assert.equal(tytDaysRemaining("2027-06-18"), 1);
+  assert.equal(tytDaysRemaining("2027-06-19"), 0);
+  assert.equal(tytDaysRemaining("2027-06-20"), 0);
+  assert.equal(tytDaysRemaining("2026-10-02"), 260);
+  assert.equal(tytDaysRemaining(today(new Date("2027-06-17T21:00:00Z"))), 1);
+  assert.equal(tytDaysRemaining(today(new Date("2027-06-18T21:00:00Z"))), 0);
 });
 test("Istanbul day lock occurs at 23:59 even before UTC midnight", () => {
   assert.equal(isLocked("2026-10-01", true, new Date("2026-10-01T20:58:59Z")), false);

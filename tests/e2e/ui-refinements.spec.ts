@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { addDays, today, weekStart } from "../../lib/dates";
+import { addDays, today, tytDaysRemaining, weekStart } from "../../lib/dates";
 import type { Task } from "../../lib/types";
 
 // Only authentication/export reads reach the server. All planner requests and
@@ -75,6 +75,7 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
     const body = request.postDataJSON();
     mutations.push(body);
     const task = tasks.find((task) => task.id === body.data.id)!;
+    const sourceDate = task.date;
     if (body.action === "copy") {
       tasks.push({
         ...task,
@@ -102,7 +103,8 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
       return;
     }
     task.updated_at = new Date().toISOString();
-    await route.fulfill({ json: { success: true } });
+    const dates = [...new Set<string>([sourceDate, ...(body.action === "copy" ? body.data.dates : [body.data.date])])];
+    await route.fulfill({ json: { dates, tasks: tasks.filter((row) => dates.includes(row.date)) } });
   });
   await page.goto("/login");
   await page
@@ -126,6 +128,9 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
   );
   await page.locator(`[data-date="${monday}"] .day-select`).click();
   await expect(page.locator(".task-row")).toHaveCount(2);
+  await expect(page.locator(".exam-countdown")).toHaveText(`2027 YKS’ye ${tytDaysRemaining(today())} gün kaldı`);
+  await expect(page.locator(".exam-countdown")).toHaveAttribute("title", "2027 YKS · 19 Haziran 2027");
+  await page.screenshot({ path: ".impeccable/review/tablet-planner-light.png" });
   await expect(page.locator(".planner-footer")).toHaveCount(0);
 
   await page.locator(".add-task").click();
@@ -291,13 +296,13 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
       },
     });
   });
-  await dialog.getByText("Siyah beyaz", { exact: true }).click();
-  await dialog.getByRole("radio", { name: /^Siyah beyaz/ }).focus();
+  await dialog.getByText("Koyu", { exact: true }).click();
+  await dialog.getByRole("radio", { name: /^Koyu/ }).focus();
   await page.keyboard.press("ArrowLeft");
-  await expect(dialog.getByRole("radio", { name: /^Kâğıt/ })).toBeChecked();
+  await expect(dialog.getByRole("radio", { name: /^Açık/ })).toBeChecked();
   await page.keyboard.press("ArrowRight");
   await expect(
-    dialog.getByRole("radio", { name: /^Siyah beyaz/ }),
+    dialog.getByRole("radio", { name: /^Koyu/ }),
   ).toBeChecked();
   const color = dialog.locator('input[type="color"]').first();
   await color.evaluate((input: HTMLInputElement) => {
@@ -311,12 +316,12 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
   await dialog.getByRole("button", { name: "Kaydet", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("Tekrar dene");
   await expect(
-    dialog.getByRole("radio", { name: /^Siyah beyaz/ }),
+    dialog.getByRole("radio", { name: /^Koyu/ }),
   ).toBeChecked();
   await dialog.getByRole("button", { name: "Kaydet", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute(
     "data-theme",
-    "monochrome",
+    "dark",
   );
   await expect(color).toHaveValue("#b64b4b");
   await expect(
@@ -324,8 +329,9 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
   ).toBeDisabled();
   await expect(page.locator(".planner-shell")).toHaveCSS(
     "background-color",
-    "rgb(255, 255, 255)",
+    "rgb(34, 37, 43)",
   );
+  await page.screenshot({ path: ".impeccable/review/tablet-profile-dark.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: ".impeccable/review/mobile-profile.png" });
   const dialogBox = (await dialog.boundingBox())!;
@@ -355,11 +361,15 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
     expect(response.status()).toBe(400);
   }
   await dialog.getByRole("button", { name: "Kapat", exact: true }).click();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.screenshot({ path: ".impeccable/review/tablet-planner-dark.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.locator(`[data-date="${thursday}"] .day-select`).click();
   await expect(
     page.locator(`[data-date="${thursday}"] .day-more`),
   ).toBeInViewport();
   await page.screenshot({ path: ".impeccable/review/mobile-task-count.png" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });
 

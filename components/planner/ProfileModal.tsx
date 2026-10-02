@@ -31,7 +31,7 @@ export default function ProfileModal({
   onExport: () => Promise<void>;
   onLogout: () => Promise<void>;
 }) {
-  const [draftTheme, setDraftTheme] = useState(theme);
+  const [draftTheme, setDraftTheme] = useState<Theme>(theme === "dark" ? "dark" : "paper");
   const [colors, setColors] = useState(
     categories.map(({ id, accent_color }) => ({ id, accent_color })),
   );
@@ -58,13 +58,13 @@ export default function ProfileModal({
             [
               {
                 value: "paper",
-                label: "Kâğıt",
+                label: "Açık",
                 subtitle: "Krem zemin, ders renkleri",
               },
               {
-                value: "monochrome",
-                label: "Siyah beyaz",
-                subtitle: "Beyaz zemin, sade görünüm",
+                value: "dark",
+                label: "Koyu",
+                subtitle: "Koyu zemin, ders renkleri",
               },
             ] as const
           ).map((option) => (
@@ -124,11 +124,6 @@ export default function ProfileModal({
             </label>
           ))}
         </div>
-        {draftTheme === "monochrome" && (
-          <p className="profile-hint">
-            Renklerin saklanır; Kâğıt temasına dönünce görünür.
-          </p>
-        )}
       </section>
       <section className="profile-section profile-export">
         <div>

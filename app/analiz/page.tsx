@@ -18,5 +18,5 @@ export default async function AnalysisPage({ searchParams }: { searchParams: Pro
     searchParams,
   ]);
   if (categories.error || profile.error) throw new Error("Analiz yüklenemedi. Tekrar dene.");
-  return <Analysis key={JSON.stringify(params)} categories={categories.data as Category[]} theme={profile.data.theme} initialStart={analysisStart(params.start, today())} currentStart={analysisStart(null, today())} initialLocation={analysisLocation(params)} />;
+  return <Analysis key={JSON.stringify(params)} categories={categories.data as Category[]} theme={profile.data.theme === "dark" ? "dark" : "paper"} initialStart={analysisStart(params.start, today())} currentStart={analysisStart(null, today())} initialLocation={analysisLocation(params)} />;
 }

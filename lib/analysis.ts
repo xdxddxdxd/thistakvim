@@ -2,7 +2,14 @@ import { addDays, dateObject, weekStart } from "./dates";
 import type { Task } from "./types";
 
 export type AnalysisTask = Pick<Task, "id" | "date" | "category_id" | "title" | "description" | "completed" | "position"> & { deleted_at?: string | null };
-export type AnalysisData = { tasks: AnalysisTask[]; previous: AnalysisTask[] };
+export type AnalysisStudyTime = { date: string; minutes: number };
+export type AnalysisData = {
+  tasks: AnalysisTask[];
+  previous: AnalysisTask[];
+  studyTimes: AnalysisStudyTime[];
+  previousStudyTimes: AnalysisStudyTime[];
+  asOf: string;
+};
 export const weekdays = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 export function validAnalysisDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -19,6 +26,22 @@ export function taskCounts(tasks: AnalysisTask[]) {
   const total = tasks.length;
   const completed = tasks.filter((task) => task.completed).length;
   return { total, completed, remaining: total - completed, rate: total ? Math.round(completed / total * 100) : null };
+}
+export function studyTimeTotals(records: AnalysisStudyTime[]) {
+  return {
+    totalMinutes: records.length ? records.reduce((total, record) => total + record.minutes, 0) : null,
+    recordedDays: records.length,
+  };
+}
+export function analyzeStudyTime(input: AnalysisStudyTime[], asOf: string, start?: string) {
+  const end = start ? addDays(start, 6) : undefined;
+  const records = input.filter((record) => record.date <= asOf && (!start || (record.date >= start && record.date <= end!)));
+  const daily = weekdays.map((name, index) => {
+    const date = start ? addDays(start, index) : undefined;
+    const rows = records.filter((record) => date ? record.date === date : weekdayIndex(record.date) === index);
+    return { name, index, date, isFuture: !!date && date > asOf, ...studyTimeTotals(rows) };
+  });
+  return { records, ...studyTimeTotals(records), daily };
 }
 export function analyzeTasks(input: AnalysisTask[], start?: string) {
   const end = start ? addDays(start, 6) : undefined;

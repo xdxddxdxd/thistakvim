@@ -4,14 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Check, ChevronLeft, ChevronRight, RefreshCw, X } from "lucide-react";
 import { addDays, dateLabel, weekLabel } from "@/lib/dates";
-import { analyzeTasks, taskCounts, titleKey, weekdayIndex, weekdays, weeklySummary, type AnalysisData, type AnalysisTask } from "@/lib/analysis";
+import { analyzeStudyTime, analyzeTasks, taskCounts, titleKey, weekdayIndex, weekdays, weeklySummary, type AnalysisData, type AnalysisTask } from "@/lib/analysis";
 import type { Category, Theme } from "@/lib/types";
 import styles from "./Analysis.module.css";
 import { analysisUrl, type AnalysisFilter as Filter, type AnalysisLocation } from "@/lib/analysis-location";
 
-const empty: AnalysisData = { tasks: [], previous: [] };
+const empty: AnalysisData = { tasks: [], previous: [], studyTimes: [], previousStudyTimes: [], asOf: "" };
 const percent = (rate: number | null) => rate === null ? "—" : `%${rate}`;
 const difference = (now: number, before: number) => `${now > before ? "+" : ""}${now - before}`;
+const duration = (minutes: number | null) => minutes === null ? "—" : `${Math.floor(minutes / 60)} sa ${minutes % 60} dk`;
+const durationDifference = (now: number | null, before: number | null) => now === null || before === null ? "—" : `${now > before ? "+" : now < before ? "−" : ""}${duration(Math.abs(now - before))}`;
 
 export default function Analysis({ categories, theme, initialStart, currentStart, initialLocation }: { categories: Category[]; theme: Theme; initialStart: string; currentStart: string; initialLocation: AnalysisLocation }) {
   const [start, setStart] = useState(initialStart);
@@ -28,6 +30,8 @@ export default function Analysis({ categories, theme, initialStart, currentStart
   const names = useMemo(() => Object.fromEntries(categories.map((category) => [category.id, category.name])), [categories]);
   const analysis = useMemo(() => analyzeTasks(data.tasks, scope === "week" ? start : undefined), [data.tasks, scope, start]);
   const previous = taskCounts(data.previous);
+  const studyTime = useMemo(() => analyzeStudyTime(data.studyTimes, data.asOf, scope === "week" ? start : undefined), [data.studyTimes, data.asOf, scope, start]);
+  const previousStudyTime = useMemo(() => analyzeStudyTime(data.previousStudyTimes, data.asOf, addDays(start, -7)), [data.previousStudyTimes, data.asOf, start]);
   const matches = useMemo(() => analysis.tasks.filter((task) =>
     (!filter?.category || task.category_id === filter.category) &&
     (filter?.day === undefined || weekdayIndex(task.date) === filter.day) &&
@@ -74,12 +78,13 @@ export default function Analysis({ categories, theme, initialStart, currentStart
     return value ? <button className={styles.count} aria-label={`${next.label}: ${value} görev, listeyi aç`} onClick={() => showTasks(next)}>{value}<ArrowUpRight size={12} aria-hidden="true" /></button> : <span className={styles.zero}>0</span>;
   }
   function dot(id: string) {
-    return <span className={styles.dot} style={{ background: theme === "paper" ? categoryMap[id]?.accent_color ?? "var(--ink)" : "var(--ink)" }} aria-hidden="true" />;
+    return <span className={styles.dot} style={{ background: theme !== "monochrome" ? categoryMap[id]?.accent_color ?? "var(--ink)" : "var(--ink)" }} aria-hidden="true" />;
   }
   function taskLink(task: AnalysisTask) {
     return `/?date=${task.date}&task=${encodeURIComponent(task.id)}`;
   }
   const maxDay = Math.max(1, ...analysis.daily.map((day) => day.total));
+  const maxStudyMinutes = Math.max(1, ...studyTime.daily.map((day) => day.totalMinutes ?? 0));
 
   return <main className={styles.shell}>
     <header className={styles.header}>
@@ -113,6 +118,20 @@ export default function Analysis({ categories, theme, initialStart, currentStart
             <button onClick={() => showTasks({ label: "Kalan görevler", status: "remaining" })}><strong>{analysis.remaining}</strong><span>kalan</span></button>
             <div><strong>{percent(analysis.rate)}</strong><span>tamamlanma</span></div>
           </div>
+        </section>
+        <section className={styles.studyTime} aria-labelledby="study-time-heading">
+          <div className={styles.sectionHeading}><h2 id="study-time-heading">Çalışma süresi</h2><span>{scope === "week" ? "Seçili hafta" : "Tüm süre kayıtları"}</span></div>
+          <div className={styles.studyOverview}>
+            <div className={styles.studyTotal}><strong>{duration(studyTime.totalMinutes)}</strong><span>{scope === "week" ? "haftalık toplam" : "genel toplam"}</span><small>{studyTime.recordedDays ? `${studyTime.recordedDays} günün süresi kaydedildi` : "Henüz süre kaydı yok"}</small></div>
+            {scope === "week" && <div className={styles.studyPrevious}><span>Önceki hafta · {weekLabel(addDays(start, -7))}</span><strong>{duration(previousStudyTime.totalMinutes)}</strong><small>{previousStudyTime.recordedDays ? `${previousStudyTime.recordedDays} günün süresi kaydedildi` : "Süre kaydı yok"}</small><p>Fark: <b>{durationDifference(studyTime.totalMinutes, previousStudyTime.totalMinutes)}</b></p></div>}
+          </div>
+          <p className={styles.caption}>{scope === "week" ? "Günlere göre kaydettiğin toplam çalışma süresi. Kaydedilmeyen günler toplama dahil edilmez; 0 dakika kaydı dahil edilir." : "Aynı haftanın gününe denk gelen tüm tarihlerdeki süreler toplanır. Örneğin Pazartesi satırı, kayıtlı bütün pazartesilerin toplamıdır."}</p>
+          <div className={styles.tableScroll}><table className={styles.table}>
+            <caption className="sr-only">{scope === "week" ? "Seçili haftanın günlük çalışma süreleri" : "Tüm çalışma sürelerinin haftanın günlerine göre toplamları"}</caption>
+            <thead><tr><th scope="col">Gün</th><th scope="col">Çalışma süresi</th>{scope === "all" && <th scope="col">Kayıtlı gün</th>}</tr></thead>
+            <tbody>{studyTime.daily.map((day) => <tr key={day.index}><th scope="row">{day.name}{day.date && <small>{dateLabel(day.date, { day: "numeric", month: "short" })}</small>}</th><td><div className={styles.studyDay}>{day.totalMinutes === null ? <span className={styles.unrecorded}>{day.isFuture ? "Henüz gelmedi" : scope === "week" ? "Kaydedilmedi" : "Kayıt yok"}</span> : <><span>{duration(day.totalMinutes)}</span><span className={styles.studyBar} aria-hidden="true"><span style={{ width: `${day.totalMinutes / maxStudyMinutes * 100}%` }} /></span></>}</div></td>{scope === "all" && <td>{day.recordedDays}</td>}</tr>)}</tbody>
+          </table></div>
+          {scope === "week" && <p className={styles.caption}>Toplamlar yalnız kayıtlı günleri karşılaştırır. Devam eden haftanın ve bugünün süresi henüz son sonuç değildir.</p>}
         </section>
         <div className={styles.overview}>
           <section><div className={styles.sectionHeading}><h2>Günlere göre dağılım</h2><span>Görev sayısı</span></div>
@@ -150,7 +169,7 @@ export default function Analysis({ categories, theme, initialStart, currentStart
         </Link></li>)}</ul>}
         {matches.length > limit && <button className={`button secondary ${styles.more}`} onClick={() => setLimit((value) => value + 20)}>20 görev daha göster ({matches.length - limit} kaldı)</button>}
       </section>}
-      <p className={styles.footnote}>Analiz görev sayısına dayanır. Taşınan görevler mevcut gününde, kopyalar ayrı görev olarak sayılır.</p>
+      <p className={styles.footnote}>Görev analizi görev sayısına, süre analizi kaydettiğin günlük toplamlara dayanır. Taşınan görevler mevcut gününde, kopyalar ayrı görev olarak sayılır.</p>
     </>}
   </main>;
 }

@@ -30,7 +30,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
       initialToday={today(new Date(initialNow))}
       initialNow={initialNow}
       username={profile.data.username}
-      initialTheme={profile.data.theme}
+      initialTheme={profile.data.theme === "dark" ? "dark" : "paper"}
       initialDate={validAnalysisDate(params.date) ? params.date : undefined}
       initialTask={typeof params.task === "string" && /^[0-9a-f-]{36}$/i.test(params.task) ? params.task : undefined}
     />

@@ -38,6 +38,8 @@ import {
   dateLabel,
   isLocked,
   today,
+  TYT_EXAM_DATE,
+  tytDaysRemaining,
   weekDates,
   weekLabel,
   weekStart,
@@ -99,7 +101,7 @@ export default function Planner({
   const [categories, setCategories] = useState(initialCategories);
   const [theme, setTheme] = useState(initialTheme);
   const [exporting, setExporting] = useState(false);
-  const accents = theme === "paper";
+  const accents = theme !== "monochrome";
   const [start, setStart] = useState(weekStart(openingDate)),
     [selected, setSelected] = useState(openingDate),
     [currentDay, setCurrentDay] = useState(initialToday);
@@ -640,9 +642,16 @@ export default function Planner({
   return (
     <main className={`planner-shell ${accents ? "" : "monochrome"}`}>
       <header className="week-header">
-        <h1>
-          Haftalık Plan<span className="wordmark-dot">.</span>
-        </h1>
+        <div className="planner-brand">
+          <h1>
+            Haftalık Plan<span className="wordmark-dot">.</span>
+          </h1>
+          <p className="exam-countdown" aria-live="polite" title="2027 YKS · 19 Haziran 2027">
+            {currentDay > TYT_EXAM_DATE ? "2027 YKS tamamlandı" : <>
+              2027 YKS’ye <strong>{tytDaysRemaining(currentDay)}</strong> gün kaldı
+            </>}
+          </p>
+        </div>
         <div className="week-navigation">
           <div className="week-nav-controls">
             <button

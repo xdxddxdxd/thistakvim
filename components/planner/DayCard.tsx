@@ -1,6 +1,6 @@
 "use client";
 import { useDroppable } from "@dnd-kit/core";
-import { Check, LockKeyhole } from "lucide-react";
+import { Check } from "lucide-react";
 import { dateLabel, isLocked } from "@/lib/dates";
 import type { Category, Task } from "@/lib/types";
 export default function DayCard({
@@ -35,7 +35,7 @@ export default function DayCard({
   return (
     <div
       ref={setNodeRef}
-      className={`day-card ${selected ? "selected" : ""} ${isOver ? "drop-target" : ""} ${isToday ? "is-today" : ""}`}
+      className={`day-card ${selected ? "selected" : ""} ${locked ? "is-closed" : ""} ${isOver ? "drop-target" : ""} ${isToday ? "is-today" : ""}`}
       data-date={date}
       aria-current={isToday ? "date" : undefined}
     >
@@ -53,10 +53,8 @@ export default function DayCard({
           {dateLabel(date, { day: "numeric" })}
         </span>
         <span className="day-marker">
-          {finished && locked ? (
-            <Check size={14} aria-label="Gün tamamlandı" />
-          ) : locked ? (
-            <LockKeyhole size={12} />
+          {locked ? (
+            <Check size={14} aria-label="Gün kapandı" />
           ) : isToday ? (
             <span className="today-mark" />
           ) : null}
