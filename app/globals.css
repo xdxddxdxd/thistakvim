@@ -192,7 +192,6 @@ svg {
 .week-caption { display: flex; align-items: center; gap: 16px; }
 .analysis-entry { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 6px; font-size: 12px; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
 .analysis-entry:hover { background: var(--input); border-radius: 8px; }
-.task-row.from-analysis { outline: 2px solid var(--ink); outline-offset: 3px; scroll-margin-block: 80px; }
 .header-end {
   display: flex;
   justify-content: flex-end;

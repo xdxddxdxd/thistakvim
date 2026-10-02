@@ -38,7 +38,6 @@ export default function TaskItem({
   task,
   category,
   locked,
-  highlighted = false,
   busy,
   accents,
   onToggle,
@@ -49,7 +48,6 @@ export default function TaskItem({
   task: Task;
   category: Category;
   locked: boolean;
-  highlighted?: boolean;
   busy: boolean;
   accents: boolean;
   onToggle: () => void;
@@ -72,8 +70,7 @@ export default function TaskItem({
   return (
     <div
       ref={setNodeRef}
-      className={`task-row ${task.completed ? "completed" : ""} ${isDragging ? "dragging" : ""} ${locked ? "locked-row" : ""} ${highlighted ? "from-analysis" : ""}`}
-      tabIndex={highlighted ? -1 : undefined}
+      className={`task-row ${task.completed ? "completed" : ""} ${isDragging ? "dragging" : ""} ${locked ? "locked-row" : ""}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       data-task-id={task.id}
     >

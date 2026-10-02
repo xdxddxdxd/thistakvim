@@ -1,14 +1,19 @@
 import { addDays, dateObject, weekStart } from "./dates";
 import type { Task } from "./types";
 
-export type AnalysisTask = Pick<Task, "id" | "date" | "category_id" | "title" | "description" | "completed" | "position"> & { deleted_at?: string | null };
+export type AnalysisTask = Pick<Task, "date" | "category_id" | "title" | "completed"> & { count?: number; deleted_at?: string | null };
 export type AnalysisStudyTime = { date: string; minutes: number };
+export type AnalysisTrendWeek = { start: string; days: number; total: number; completed: number; minutes: number | null; recordedDays: number };
+export type AnalysisTrendMonth = AnalysisTrendWeek & { end: string };
 export type AnalysisData = {
   tasks: AnalysisTask[];
   previous: AnalysisTask[];
   studyTimes: AnalysisStudyTime[];
   previousStudyTimes: AnalysisStudyTime[];
   asOf: string;
+  closedThrough: string;
+  trend: AnalysisTrendWeek[];
+  monthlyTrend: AnalysisTrendMonth[];
 };
 export const weekdays = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 export function validAnalysisDate(value: unknown): value is string {
@@ -23,14 +28,15 @@ export function titleKey(title: string) {
   return title.normalize("NFC").trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
 }
 export function taskCounts(tasks: AnalysisTask[]) {
-  const total = tasks.length;
-  const completed = tasks.filter((task) => task.completed).length;
-  return { total, completed, remaining: total - completed, rate: total ? Math.round(completed / total * 100) : null };
+  const total = tasks.reduce((sum, task) => sum + (task.count ?? 1), 0);
+  const completed = tasks.reduce((sum, task) => sum + (task.completed ? task.count ?? 1 : 0), 0);
+  return { total, completed, rate: total ? Math.round(completed / total * 100) : null };
 }
 export function studyTimeTotals(records: AnalysisStudyTime[]) {
   return {
     totalMinutes: records.length ? records.reduce((total, record) => total + record.minutes, 0) : null,
     recordedDays: records.length,
+    averageMinutes: records.length ? Math.round(records.reduce((total, record) => total + record.minutes, 0) / records.length) : null,
   };
 }
 export function analyzeStudyTime(input: AnalysisStudyTime[], asOf: string, start?: string) {
@@ -61,13 +67,13 @@ export function analyzeTasks(input: AnalysisTask[], start?: string) {
     titles.push(task);
     titleGroups.set(key, titles);
   }
-  const categories = [...categoryGroups].map(([id, rows]) => ({ id, ...taskCounts(rows), days: weekdays.map((_, index) => rows.filter((task) => weekdayIndex(task.date) === index).length) })).sort((a, b) => b.total - a.total || a.id.localeCompare(b.id));
+  const categories = [...categoryGroups].map(([id, rows]) => ({ id, ...taskCounts(rows), days: weekdays.map((_, index) => taskCounts(rows.filter((task) => weekdayIndex(task.date) === index)).total) })).sort((a, b) => b.total - a.total || a.id.localeCompare(b.id));
   const titles = [...titleGroups].map(([key, rows]) => ({ key, title: rows[0].title.trim().replace(/\s+/g, " "), categories: [...new Set(rows.map((task) => task.category_id))], ...taskCounts(rows) })).sort((a, b) => b.total - a.total || a.title.localeCompare(b.title, "tr"));
   return { tasks, ...taskCounts(tasks), daily, categories, titles };
 }
 export function weeklySummary(analysis: ReturnType<typeof analyzeTasks>, names: Record<string, string>) {
   if (!analysis.total) return "Bu hafta henüz görev yok. Planına görev eklediğinde haftanın özeti burada görünecek.";
-  const parts = [`${analysis.total} görevin ${analysis.completed} tanesi tamamlandı; ${analysis.remaining} görev kaldı.`];
+  const parts = [`${analysis.total} görevin ${analysis.completed} tanesi tamamlandı.`];
   const busiest = analysis.daily.filter((day) => day.total === Math.max(...analysis.daily.map((day) => day.total)));
   if (busiest.length < 7) parts.push(`En yoğun ${busiest.length === 1 ? "gün" : "günler"}: ${busiest.map((day) => day.name).join(", ")} (${busiest[0].total} görev${busiest.length > 1 ? " / gün" : ""}).`);
   const top = analysis.categories.filter((category) => category.total === analysis.categories[0].total);
@@ -76,4 +82,22 @@ export function weeklySummary(analysis: ReturnType<typeof analyzeTasks>, names: 
 }
 export function analysisStart(value: unknown, fallback: string) {
   return weekStart(validAnalysisDate(value) ? value : fallback);
+}
+
+export function compareClosedDays(data: AnalysisData, start: string) {
+  const days = Math.max(0, Math.min(7, Math.round((dateObject(data.closedThrough).getTime() - dateObject(start).getTime()) / 86400000) + 1));
+  const previousStart = addDays(start, -7);
+  const end = addDays(start, days - 1);
+  const previousEnd = addDays(previousStart, days - 1);
+  const inRange = <T extends { date: string }>(rows: T[], from: string, to: string) => days ? rows.filter((row) => row.date >= from && row.date <= to) : [];
+  const currentStudy = inRange(data.studyTimes, start, end);
+  const previousStudy = inRange(data.previousStudyTimes, previousStart, previousEnd);
+  const pairedCurrent = currentStudy.filter((row) => previousStudy.some((before) => before.date === addDays(row.date, -7)));
+  const pairedPrevious = previousStudy.filter((row) => currentStudy.some((current) => current.date === addDays(row.date, 7)));
+  return {
+    days,
+    pairedStudyDays: pairedCurrent.length,
+    current: { ...taskCounts(inRange(data.tasks, start, end)), ...studyTimeTotals(pairedCurrent) },
+    previous: { ...taskCounts(inRange(data.previous, previousStart, previousEnd)), ...studyTimeTotals(pairedPrevious) },
+  };
 }

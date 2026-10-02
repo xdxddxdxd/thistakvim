@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { analyzeStudyTime, analyzeTasks, studyTimeTotals, taskCounts, titleKey, validAnalysisDate, weeklySummary, type AnalysisTask } from "../lib/analysis";
-const task = (id: string, date: string, completed = false, extra: Partial<AnalysisTask> = {}): AnalysisTask => ({ id, date, completed, category_id: "math", title: "Problemler", description: "", position: 1, ...extra });
+import { analyzeStudyTime, analyzeTasks, compareClosedDays, studyTimeTotals, taskCounts, titleKey, validAnalysisDate, weeklySummary, type AnalysisData, type AnalysisTask } from "../lib/analysis";
+const task = (_id: string, date: string, completed = false, extra: Partial<AnalysisTask> = {}): AnalysisTask => ({ date, completed, category_id: "math", title: "Problemler", ...extra });
 
-test("week stats exclude other weeks and deleted tasks; remaining tasks are not inferred from day closure", () => {
+test("week stats exclude other weeks and deleted tasks", () => {
   const stats = analyzeTasks([
     task("1", "2026-09-28", true), task("2", "2026-09-28"), task("3", "2026-10-04"),
     task("4", "2026-09-27"), task("5", "2026-10-05"), task("6", "2026-10-01", false, { deleted_at: "2026-10-01" }),
   ], "2026-09-28");
-  assert.deepEqual([stats.total, stats.completed, stats.remaining, stats.rate], [3, 1, 2, 33]);
+  assert.deepEqual([stats.total, stats.completed, stats.rate], [3, 1, 33]);
   assert.equal(stats.daily[0].total, 2);
   assert.equal(stats.daily[6].total, 1);
   assert.deepEqual(stats.categories[0].days, [2, 0, 0, 0, 0, 0, 1]);
@@ -55,8 +55,8 @@ test("weekly study time sums daily records independently of tasks and excludes o
 });
 
 test("unrecorded study time remains distinct from a valid zero-minute day", () => {
-  assert.deepEqual(studyTimeTotals([]), { totalMinutes: null, recordedDays: 0 });
-  assert.deepEqual(studyTimeTotals([{ date: "2026-10-01", minutes: 0 }]), { totalMinutes: 0, recordedDays: 1 });
+  assert.deepEqual(studyTimeTotals([]), { totalMinutes: null, recordedDays: 0, averageMinutes: null });
+  assert.deepEqual(studyTimeTotals([{ date: "2026-10-01", minutes: 0 }]), { totalMinutes: 0, recordedDays: 1, averageMinutes: 0 });
   const stats = analyzeStudyTime([{ date: "2026-09-28", minutes: 0 }], "2026-10-01", "2026-09-28");
   assert.equal(stats.totalMinutes, 0);
   assert.equal(stats.daily[0].totalMinutes, 0);
@@ -91,9 +91,54 @@ test("general study time aggregates all matching weekdays without assigning a si
   assert.equal(stats.recordedDays, 3);
   assert.equal(stats.daily[0].totalMinutes, 155);
   assert.equal(stats.daily[0].recordedDays, 2);
+  assert.equal(stats.daily[0].averageMinutes, 78);
+  assert.equal(stats.daily[1].averageMinutes, 0);
+  assert.equal(stats.daily[2].averageMinutes, null);
   assert.equal(stats.daily[1].totalMinutes, 0);
   assert.equal(stats.daily[2].totalMinutes, null);
   assert.ok(stats.daily.every((day) => day.date === undefined && !day.isFuture));
+});
+
+test("grouped database counts retain task, course, title and weekday totals", () => {
+  const stats = analyzeTasks([task("1", "2026-09-28", true, { count: 3 }), task("2", "2026-09-28", false, { count: 2 })]);
+  assert.equal(stats.total, 5);
+  assert.equal(stats.completed, 3);
+  assert.equal(stats.rate, 60);
+  assert.equal(stats.daily[0].total, 5);
+  assert.equal(stats.categories[0].days[0], 5);
+  assert.equal(stats.titles[0].total, 5);
+});
+
+test("fair comparison excludes today and pairs only recorded matching weekdays including zero", () => {
+  const data: AnalysisData = {
+    asOf: "2026-10-02", closedThrough: "2026-10-01", trend: [], monthlyTrend: [],
+    tasks: [task("1", "2026-09-28", true), task("2", "2026-10-02", true), task("3", "2026-10-04")],
+    previous: [task("4", "2026-09-21", true), task("5", "2026-09-25", true)],
+    studyTimes: [{ date: "2026-09-28", minutes: 0 }, { date: "2026-09-29", minutes: 120 }, { date: "2026-10-02", minutes: 600 }],
+    previousStudyTimes: [{ date: "2026-09-21", minutes: 90 }, { date: "2026-09-23", minutes: 120 }, { date: "2026-09-25", minutes: 600 }],
+  };
+  const result = compareClosedDays(data, "2026-09-28");
+  assert.equal(result.days, 4);
+  assert.equal(result.current.total, 1);
+  assert.equal(result.previous.total, 1);
+  assert.equal(result.pairedStudyDays, 1);
+  assert.equal(result.current.totalMinutes, 0);
+  assert.equal(result.previous.totalMinutes, 90);
+  const future = compareClosedDays(data, "2026-10-05");
+  assert.equal(future.days, 0);
+  assert.equal(future.current.total, 0);
+  assert.equal(future.current.totalMinutes, null);
+  const past = compareClosedDays({ ...data, closedThrough: "2026-10-04" }, "2026-09-28");
+  assert.equal(past.days, 7);
+  assert.equal(past.current.total, 3);
+  assert.equal(past.pairedStudyDays, 2);
+});
+
+test("comparison cannot invent a zero-minute baseline from missing records", () => {
+  const result = compareClosedDays({ tasks: [], previous: [], studyTimes: [{ date: "2026-09-28", minutes: 120 }], previousStudyTimes: [], asOf: "2026-10-02", closedThrough: "2026-10-01", trend: [], monthlyTrend: [] }, "2026-09-28");
+  assert.equal(result.pairedStudyDays, 0);
+  assert.equal(result.current.totalMinutes, null);
+  assert.equal(result.previous.totalMinutes, null);
 });
 
 test("weekly study totals compare recorded sums without treating missing weeks as zero", () => {

@@ -5,7 +5,7 @@ import { today } from "@/lib/dates";
 import type { Category } from "@/lib/types";
 import { validAnalysisDate } from "@/lib/analysis";
 export const dynamic = "force-dynamic";
-export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string; task?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const params = await searchParams;
   const client = await serverClient();
   const {
@@ -24,7 +24,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   const initialNow = Date.now();
   return (
     <Planner
-      key={`${params.date ?? ""}:${params.task ?? ""}`}
+      key={params.date ?? ""}
       userId={user.id}
       categories={data as Category[]}
       initialToday={today(new Date(initialNow))}
@@ -32,7 +32,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
       username={profile.data.username}
       initialTheme={profile.data.theme === "dark" ? "dark" : "paper"}
       initialDate={validAnalysisDate(params.date) ? params.date : undefined}
-      initialTask={typeof params.task === "string" && /^[0-9a-f-]{36}$/i.test(params.task) ? params.task : undefined}
     />
   );
 }

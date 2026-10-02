@@ -78,7 +78,6 @@ export default function Planner({
   username,
   initialTheme,
   initialDate,
-  initialTask,
 }: {
   userId: string;
   categories: Category[];
@@ -87,13 +86,10 @@ export default function Planner({
   username: string;
   initialTheme: Theme;
   initialDate?: string;
-  initialTask?: string;
 }) {
   const router = useRouter();
   const openingDate = initialDate ?? initialToday;
   const [currentTime, setCurrentTime] = useState(initialNow);
-  const taskOpened = useRef(false);
-  const [activeTask, setActiveTask] = useState(initialTask);
   const studyRef = useRef<StudyTimeHandle>(null);
   const [studySaving, setStudySaving] = useState(false);
   const [taskBusy, setTaskBusy] = useState(false);
@@ -221,15 +217,6 @@ export default function Planner({
     return () => { cancelled = true; abortRef.current?.abort(); };
   }, [start, loadWeek]);
   useEffect(() => {
-    if (!initialTask || loading || loadError || taskOpened.current) return;
-    taskOpened.current = true;
-    const row = [...document.querySelectorAll<HTMLElement>("[data-task-id]")].find((element) => element.dataset.taskId === initialTask);
-    if (row) {
-      row.scrollIntoView({ block: "center", behavior: "instant" });
-      row.focus({ preventScroll: true });
-    } else setToast({ text: "Bu görev artık bu günde bulunmuyor. Güncel planı görebilirsin." });
-  }, [initialTask, loading, loadError, data.tasks]);
-  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
       setCurrentDay(today());
@@ -257,12 +244,11 @@ export default function Planner({
     return () => clearTimeout(timer);
   }, [currentTime]);
   useEffect(() => {
-    if (selected === openingDate && !initialDate && !activeTask && !window.location.search) return;
+    if (selected === openingDate && !initialDate && !window.location.search) return;
     const params = new URLSearchParams({ date: selected });
-    if (activeTask) params.set("task", activeTask);
     const url = `/?${params}`;
     if (window.location.pathname + window.location.search !== url) window.history.replaceState(null, "", url);
-  }, [selected, activeTask, openingDate, initialDate]);
+  }, [selected, openingDate, initialDate]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     return () => {
@@ -429,7 +415,6 @@ export default function Planner({
     if (!(await persistDay())) return;
     selectedRef.current = date;
     setSelected(date);
-    setActiveTask(undefined);
     setNoteFailed(false);
     setNoteConflict(null);
     setCompareNotes(false);
@@ -441,7 +426,6 @@ export default function Planner({
       date = addDays(selected, delta * 7);
     selectedRef.current = date;
     setSelected(date);
-    setActiveTask(undefined);
     setNoteFailed(false);
     setNoteConflict(null);
     setCompareNotes(false);
@@ -454,7 +438,6 @@ export default function Planner({
     const date = today();
     selectedRef.current = date;
     setSelected(date);
-    setActiveTask(undefined);
     setNoteFailed(false);
     setNoteConflict(null);
     setCompareNotes(false);
@@ -833,7 +816,6 @@ export default function Planner({
                     <TaskItem
                       key={task.id}
                       task={task}
-                      highlighted={task.id === activeTask}
                       category={categories.find(
                         (c) => c.id === task.category_id,
                       )!}

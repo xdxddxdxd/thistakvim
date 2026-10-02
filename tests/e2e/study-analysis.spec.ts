@@ -26,7 +26,7 @@ test("study analysis distinguishes missing and zero records across weekly, gener
     expect(route.request().method()).toBe("GET");
     const scope = new URL(route.request().url()).searchParams.get("scope");
     const data: AnalysisData = {
-      tasks: [], previous: [], asOf: "2026-10-02",
+      tasks: [], previous: [], asOf: "2026-10-02", closedThrough: "2026-10-01", trend: [], monthlyTrend: [],
       studyTimes: empty ? [] : scope === "all" ? [...previousStudyTimes, ...studyTimes] : studyTimes,
       previousStudyTimes: empty || scope === "all" ? [] : previousStudyTimes,
     };
@@ -44,8 +44,7 @@ test("study analysis distinguishes missing and zero records across weekly, gener
   await expect(study).toBeVisible();
   await expect(study.locator("strong").first()).toHaveText("3 sa 30 dk");
   await expect(study.getByText("3 günün süresi kaydedildi", { exact: true })).toBeVisible();
-  await expect(study.getByText("1 sa 30 dk", { exact: true })).toHaveCount(2);
-  await expect(study.getByText("+2 sa 0 dk", { exact: true })).toBeVisible();
+  await expect(study.getByText("1 sa 30 dk", { exact: true })).toHaveCount(1);
   const tuesday = study.getByRole("row").filter({ hasText: "Salı" });
   const thursday = study.getByRole("row").filter({ hasText: "Perşembe" });
   const saturday = study.getByRole("row").filter({ hasText: "Cumartesi" });
@@ -75,12 +74,12 @@ test("study analysis distinguishes missing and zero records across weekly, gener
   await expect(study.getByText("4 günün süresi kaydedildi", { exact: true })).toBeVisible();
   await expect(study.getByRole("columnheader", { name: "Kayıtlı gün", exact: true })).toBeVisible();
   const monday = study.getByRole("row").filter({ hasText: "Pazartesi" });
-  await expect(monday.getByRole("cell").first()).toHaveText("3 sa 30 dk");
+  await expect(monday.getByRole("cell").first()).toHaveText("1 sa 45 dk");
   await expect(monday.getByRole("cell").last()).toHaveText("2");
   await expect(tuesday.getByRole("cell").first()).toHaveText("0 sa 0 dk");
   await expect(tuesday.getByRole("cell").last()).toHaveText("1");
   await expect(study.getByText(/Önceki hafta/)).toHaveCount(0);
-  await expect(study.getByText(/kayıtlı bütün pazartesilerin toplamıdır/)).toBeVisible();
+  await expect(study.getByText(/ortalaması yalnız süre kaydı olan tarihlerden/)).toBeVisible();
   await expect(monday.getByText("28 Eyl", { exact: true })).toHaveCount(0);
   await assertNoHorizontalOverflow(page);
 

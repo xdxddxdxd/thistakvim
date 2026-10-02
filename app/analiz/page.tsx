@@ -8,7 +8,7 @@ import { analysisLocation } from "@/lib/analysis-location";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Analiz · Haftalık Plan" };
-export default async function AnalysisPage({ searchParams }: { searchParams: Promise<{ start?: string; scope?: string; section?: string; filter?: string }> }) {
+export default async function AnalysisPage({ searchParams }: { searchParams: Promise<{ start?: string; scope?: string; section?: string }> }) {
   const client = await serverClient();
   const { data: { user } } = await client.auth.getUser();
   if (!user) redirect("/login");

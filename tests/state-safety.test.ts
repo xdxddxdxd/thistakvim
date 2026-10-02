@@ -3,15 +3,14 @@ import assert from "node:assert/strict";
 import { analysisLocation, analysisUrl } from "../lib/analysis-location";
 import { readNoteDraft, storeNoteDraft } from "../lib/note-drafts";
 
-test("analysis link preserves remaining filter, scope and section", () => {
-  const state = { scope: "all" as const, section: "tasks" as const, filter: { label: "Cuma · kalan", day: 4, status: "remaining" as const } };
+test("analysis link preserves scope and course section", () => {
+  const state = { scope: "all" as const, section: "courses" as const };
   const url = new URL(analysisUrl("2026-09-28", state), "http://localhost");
-  assert.deepEqual(analysisLocation(Object.fromEntries(url.searchParams)), analysisLocation({ scope: "all", section: "tasks", filter: JSON.stringify(state.filter) }));
-  assert.equal(analysisLocation(Object.fromEntries(url.searchParams)).filter?.status, "remaining");
+  assert.deepEqual(analysisLocation(Object.fromEntries(url.searchParams)), state);
 });
 test("invalid analysis links fall back safely", () => {
-  assert.deepEqual(analysisLocation({ scope: "wrong", section: "unknown", filter: "{" }), { scope: "week", section: "summary", filter: null });
-  assert.equal(analysisLocation({ filter: JSON.stringify({ label: "bad", day: 7 }) }).filter, null);
+  assert.deepEqual(analysisLocation({ scope: "wrong", section: "unknown", filter: "{" }), { scope: "week", section: "summary" });
+  assert.deepEqual(analysisLocation({ section: "tasks", filter: "obsolete" }), { scope: "week", section: "summary" });
 });
 test("drafts retain empty edits and revision and are isolated by account and date", () => {
   const values = new Map<string, string>();
