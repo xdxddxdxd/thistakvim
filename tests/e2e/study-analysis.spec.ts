@@ -26,7 +26,7 @@ test("study analysis distinguishes missing and zero records across weekly, gener
     expect(route.request().method()).toBe("GET");
     const scope = new URL(route.request().url()).searchParams.get("scope");
     const data: AnalysisData = {
-      tasks: [], previous: [], asOf: "2026-10-02", closedThrough: "2026-10-01", trend: [], monthlyTrend: [],
+      tasks: [], previous: [], asOf: "2026-10-02", closedThrough: "2026-10-01", chartStudyTimes: [], chartMonth: "2026-10-01", chartMonthEnd: "2026-10-31",
       studyTimes: empty ? [] : scope === "all" ? [...previousStudyTimes, ...studyTimes] : studyTimes,
       previousStudyTimes: empty || scope === "all" ? [] : previousStudyTimes,
     };

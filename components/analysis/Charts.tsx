@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useState, type CSSProperties } from "react";
-import { dateLabel, dateObject, weekLabel } from "@/lib/dates";
-import type { AnalysisTrendWeek, AnalysisTrendMonth } from "@/lib/analysis";
+import { addDays, dateLabel, dateObject, weekLabel } from "@/lib/dates";
+import type { AnalysisStudyTime } from "@/lib/analysis";
 import styles from "./Analysis.module.css";
 
 export const duration = (minutes: number | null) => minutes === null ? "—" : `${Math.floor(minutes / 60)} sa ${minutes % 60} dk`;
@@ -33,35 +33,37 @@ export function CourseDonut({ courses }: { courses: { id: string; name: string; 
   </div>;
 }
 
-export function TrendChart({ trend, monthlyTrend }: { trend: AnalysisTrendWeek[]; monthlyTrend: AnalysisTrendMonth[] }) {
+export function TrendChart({ records, start, month, monthEnd, asOf }: { records: AnalysisStudyTime[]; start: string; month: string; monthEnd: string; asOf: string }) {
   const [interval, setInterval] = useState<"week" | "month">("week");
-  const [metric, setMetric] = useState<"minutes" | "rate">("minutes");
-  const [selectedStart, setSelectedStart] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const detailId = useId();
-  const weeks = interval === "week" ? trend.slice(-8) : monthlyTrend.slice(-6);
-  const selected = weeks.find((week) => week.start === selectedStart) ?? weeks.at(-1);
-  const value = (week: AnalysisTrendWeek) => metric === "minutes" ? week.minutes : week.total ? Math.round(week.completed / week.total * 100) : null;
-  const max = metric === "rate" ? 100 : Math.max(60, ...weeks.map((week) => week.minutes ?? 0));
-  const label = (amount: number | null) => metric === "minutes" ? duration(amount) : percent(amount);
-  const periodLabel = (week: AnalysisTrendWeek) => interval === "week" ? weekLabel(week.start) : dateLabel(week.start, { month: "long", year: "numeric" });
-  const periodDays = (week: AnalysisTrendWeek) => interval === "week" ? 7 : Math.round((dateObject((week as AnalysisTrendMonth).end).getTime() - dateObject(week.start).getTime()) / 86400000) + 1;
+  const firstDay = interval === "week" ? start : month;
+  const dayCount = interval === "week" ? 7 : dateObject(monthEnd).getUTCDate();
+  const minutesByDate = new Map(records.filter((record) => record.date <= asOf).map((record) => [record.date, record.minutes]));
+  const days = Array.from({ length: dayCount }, (_, index) => {
+    const date = addDays(firstDay, index);
+    return { date, minutes: minutesByDate.get(date) ?? null, isFuture: date > asOf };
+  });
+  const selected = days.find((day) => day.date === selectedDate) ?? days.find((day) => day.date === asOf) ?? days.findLast((day) => day.minutes !== null) ?? days[0];
+  const max = Math.max(60, ...days.map((day) => day.minutes ?? 0));
+  const fullDate = (date: string) => dateLabel(date, { day: "numeric", month: "long", weekday: "long" });
+  const dayValue = (day: typeof selected) => day.isFuture ? "Henüz gelmedi" : day.minutes === null ? "Kayıt yok" : duration(day.minutes);
   const hoursLabel = (amount: number) => `${(Math.round(amount / 60 * 10) / 10).toLocaleString("tr-TR")} sa`;
-  const hasData = weeks.some((week) => value(week) !== null);
-  return <section className={styles.trend} aria-labelledby="trend-heading">
+  return <section className={styles.panel} aria-labelledby="trend-heading">
     <div className={styles.sectionHeading}><h2 id="trend-heading">{interval === "week" ? "Haftalık gelişim" : "Aylık gelişim"}</h2><div className={styles.smallSwitch} aria-label="Grafik aralığı"><button aria-pressed={interval === "week"} onClick={() => setInterval("week")}>Haftalık</button><button aria-pressed={interval === "month"} onClick={() => setInterval("month")}>Aylık</button></div></div>
-    <div className={styles.chartControls}><div className={styles.metricSwitch} aria-label="Grafik ölçümü"><button aria-pressed={metric === "minutes"} onClick={() => setMetric("minutes")}>Çalışma süresi</button><button aria-pressed={metric === "rate"} onClick={() => setMetric("rate")}>Tamamlanma</button></div></div>
-    {!hasData ? <p className={styles.chartEmpty}>{metric === "minutes" ? "Kapanmış günlere süre kaydettiğinde gelişimin burada görünecek." : "Kapanmış günlere ait görevlerin olduğunda tamamlanma grafiği burada görünecek."}</p> : <div className={styles.chartFrame}>
-      <div className={styles.chartAxis} aria-hidden="true"><span>{metric === "minutes" ? hoursLabel(max) : "%100"}</span><span>{metric === "minutes" ? hoursLabel(max / 2) : "%50"}</span><span>0</span></div>
-      <div className={styles.chartPlot} style={{ "--weeks": weeks.length } as CSSProperties}>{weeks.map((week) => {
-        const amount = value(week);
-        return <button key={week.start} className={styles.weekBar} aria-pressed={selected?.start === week.start} aria-describedby={detailId} aria-label={`${periodLabel(week)}: ${amount === null ? "Kayıt yok" : label(amount)}${week.days < periodDays(week) ? `, ${week.days} kapanmış gün` : ""}`} onClick={() => setSelectedStart(week.start)}>
-          <span className={styles.barSpace}><span className={`${styles.chartBar} ${amount === null ? styles.missingBar : ""}`} style={{ transform: `scaleY(${amount === null ? 0 : Math.max(.0125, amount / max)})` }} />{amount === null && <span className={styles.missingMark}>—</span>}</span>
-          <span className={styles.weekDate}>{dateLabel(week.start, interval === "week" ? { day: "numeric", month: "short" } : { month: "short" })}</span>
-          {week.days < periodDays(week) && <span className={styles.partialDot} aria-hidden="true" />}
+    <p className={styles.chartPeriod}>Çalışma süresi · {interval === "week" ? weekLabel(start) : dateLabel(month, { month: "long", year: "numeric" })}</p>
+    <div className={styles.chartFrame}>
+      <div className={styles.chartAxis} aria-hidden="true"><span>{hoursLabel(max)}</span><span>{hoursLabel(max / 2)}</span><span>0</span></div>
+      <div className={`${styles.chartPlot} ${interval === "month" ? styles.monthPlot : ""}`} style={{ "--days": dayCount } as CSSProperties}>{days.map((day, index) => {
+        const number = index + 1;
+        const showLabel = interval === "week" || number === 1 || (number % 5 === 0 && number <= dayCount - 2) || number === dayCount;
+        return <button key={day.date} className={styles.dayBar} aria-pressed={selected.date === day.date} aria-describedby={detailId} aria-label={`${fullDate(day.date)}: ${dayValue(day)}`} onClick={() => setSelectedDate(day.date)}>
+          <span className={styles.barSpace}><span className={`${styles.chartBar} ${day.minutes === null ? styles.missingBar : ""}`} style={{ transform: `scaleY(${day.minutes === null ? 0 : Math.max(.0125, day.minutes / max)})` }} />{day.minutes === null && <span className={styles.missingMark} aria-hidden="true">—</span>}</span>
+          <span className={styles.dayDate} aria-hidden="true">{showLabel ? interval === "week" ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"][index] : number : "\u00a0"}</span>
         </button>;
       })}</div>
-    </div>}
-    {hasData && selected && <div className={styles.chartDetail} id={detailId} aria-live="polite"><span>{periodLabel(selected)}{selected.days < periodDays(selected) ? ` · ${selected.days}/${periodDays(selected)} gün` : ""}</span><strong>{label(value(selected))}</strong><small>{metric === "minutes" ? `${selected.recordedDays} günün süresi kaydedildi` : `${selected.completed}/${selected.total} görev tamamlandı`}</small></div>}
-    <p className={styles.caption}>{interval === "week" ? "Son 8 hafta" : "Son 6 ay"} · Yalnız kapanmış günler. Eksik kayıt sıfır sayılmaz; devam eden dönem kısmi gösterilir.</p>
+    </div>
+    <div className={styles.chartDetail} id={detailId} aria-live="polite"><span>{fullDate(selected.date)}</span><strong>{dayValue(selected)}</strong></div>
+    <p className={styles.caption}>Her sütun bir gün. Bugünün süresi değişebilir; eksik kayıt sıfır sayılmaz.</p>
   </section>;
 }

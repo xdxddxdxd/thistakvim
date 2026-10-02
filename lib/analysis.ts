@@ -3,8 +3,6 @@ import type { Task } from "./types";
 
 export type AnalysisTask = Pick<Task, "date" | "category_id" | "title" | "completed"> & { count?: number; deleted_at?: string | null };
 export type AnalysisStudyTime = { date: string; minutes: number };
-export type AnalysisTrendWeek = { start: string; days: number; total: number; completed: number; minutes: number | null; recordedDays: number };
-export type AnalysisTrendMonth = AnalysisTrendWeek & { end: string };
 export type AnalysisData = {
   tasks: AnalysisTask[];
   previous: AnalysisTask[];
@@ -12,8 +10,9 @@ export type AnalysisData = {
   previousStudyTimes: AnalysisStudyTime[];
   asOf: string;
   closedThrough: string;
-  trend: AnalysisTrendWeek[];
-  monthlyTrend: AnalysisTrendMonth[];
+  chartStudyTimes: AnalysisStudyTime[];
+  chartMonth: string;
+  chartMonthEnd: string;
 };
 export const weekdays = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
 export function validAnalysisDate(value: unknown): value is string {

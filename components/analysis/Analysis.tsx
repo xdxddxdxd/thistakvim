@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
-import { addDays, dateLabel, weekLabel } from "@/lib/dates";
+import { addDays, dateLabel, weekLabel, weekStart } from "@/lib/dates";
 import { analyzeStudyTime, analyzeTasks, compareClosedDays, weekdays, weeklySummary, type AnalysisData } from "@/lib/analysis";
 import type { Category, Theme } from "@/lib/types";
 import { analysisUrl, type AnalysisLocation } from "@/lib/analysis-location";
 import { CompletionRing, CourseDonut, TrendChart, duration, percent } from "./Charts";
 import styles from "./Analysis.module.css";
 
-const empty: AnalysisData = { tasks: [], previous: [], studyTimes: [], previousStudyTimes: [], asOf: "", closedThrough: "", trend: [], monthlyTrend: [] };
+const empty: AnalysisData = { tasks: [], previous: [], studyTimes: [], previousStudyTimes: [], asOf: "", closedThrough: "", chartStudyTimes: [], chartMonth: "", chartMonthEnd: "" };
 const difference = (now: number, before: number) => `${now > before ? "+" : ""}${now - before}`;
 const durationDifference = (now: number | null, before: number | null) => now === null || before === null ? "—" : `${now > before ? "+" : now < before ? "−" : ""}${duration(Math.abs(now - before))}`;
 
@@ -81,12 +81,12 @@ export default function Analysis({ categories, theme, initialStart, currentStart
     </nav>
     {loading ? <div className={styles.message} role="status">Analiz yükleniyor…</div> : error ? <div className={styles.message} role="alert"><p>{error}</p><button className="button secondary" onClick={() => setRetry((value) => value + 1)}><RefreshCw size={17} /> Tekrar dene</button></div> : <>
       {section === "summary" && <>
-        <section className={styles.summary} aria-labelledby="short-summary">
+        <section className={`${styles.panel} ${styles.summary}`} aria-labelledby="short-summary">
           <div className={styles.summaryCopy}><h2 id="short-summary">{scope === "week" ? "Haftanın özeti" : "Genel görünüm"}</h2><p>{scope === "all" && !analysis.total ? "Henüz görev yok. Planına görev eklediğinde genel dağılımın burada görünecek." : weeklySummary(analysis, names)}</p></div>
           <CompletionRing total={analysis.total} completed={analysis.completed} rate={analysis.rate} />
         </section>
         <div className={styles.overview}>
-          <section className={styles.studyTime} aria-labelledby="study-time-heading">
+          <section className={styles.panel} aria-labelledby="study-time-heading">
             <div className={styles.sectionHeading}><h2 id="study-time-heading">Çalışma süresi</h2><span>{scope === "week" ? "Seçili hafta" : "Tüm kayıtlar"}</span></div>
             <div className={styles.studyTotal}><strong>{duration(studyTime.totalMinutes)}</strong><span>{scope === "week" ? "haftalık toplam" : "genel toplam"}</span><small>{studyTime.recordedDays ? `${studyTime.recordedDays} günün süresi kaydedildi` : "Henüz süre kaydı yok"}</small></div>
             <div className={styles.tableScroll}><table className={styles.table}>
@@ -100,8 +100,8 @@ export default function Analysis({ categories, theme, initialStart, currentStart
             <p className={styles.caption}>{scope === "week" ? "Bugünün süresi değişebilir. Kaydedilmeyen günler toplam dışında; 0 dakika kaydı dahildir." : "Her günün ortalaması yalnız süre kaydı olan tarihlerden hesaplanır. 0 dakika dahildir; eksik kayıt sıfır sayılmaz."}</p>
           </section>
           <div className={styles.rightColumn}>
-            <TrendChart trend={data.trend} monthlyTrend={data.monthlyTrend ?? []} />
-            {scope === "week" && comparison && <section className={styles.comparison} aria-labelledby="comparison-heading">
+            <TrendChart records={data.chartStudyTimes} start={scope === "week" ? start : weekStart(data.asOf)} month={data.chartMonth} monthEnd={data.chartMonthEnd} asOf={data.asOf} />
+            {scope === "week" && comparison && <section className={styles.panel} aria-labelledby="comparison-heading">
               <div className={styles.sectionHeading}><h2 id="comparison-heading">Önceki haftayla</h2><span>{comparison.days ? `${comparison.days} kapanmış gün` : "Henüz kapanmış gün yok"}</span></div>
               {!comparison.days ? <p className={styles.caption}>Gün kapandığında iki haftanın aynı günlerini karşılaştırabileceksin.</p> : <>
                 <p className={styles.comparisonPeriod}>{comparison.days === 7 ? "Pazartesi–Pazar" : comparison.days === 1 ? "Pazartesi" : `Pazartesi–${weekdays[comparison.days - 1]}`} · {weekLabel(addDays(start, -7))}</p>
@@ -117,13 +117,13 @@ export default function Analysis({ categories, theme, initialStart, currentStart
         </div>
       </>}
       {section === "courses" && <div className={styles.courseSections}>
-        <section aria-labelledby="courses-heading"><div className={styles.sectionHeading}><h2 id="courses-heading">Ders dağılımı</h2><span>{scope === "week" ? "Seçili hafta" : "Tüm planlar"}</span></div>
+        <section className={styles.panel} aria-labelledby="courses-heading"><div className={styles.sectionHeading}><h2 id="courses-heading">Ders dağılımı</h2><span>{scope === "week" ? "Seçili hafta" : "Tüm planlar"}</span></div>
           {!analysis.total ? <p className={styles.empty}>Bu aralıkta görev yok. Planına görev eklediğinde derslerin dağılımı burada görünecek.</p> : <div className={styles.courseOverview}><CourseDonut courses={courses} /><div className={styles.tableScroll}><table className={styles.table}><thead><tr><th scope="col">Ders</th><th scope="col">Planlanan</th><th scope="col">Biten</th></tr></thead><tbody>{courses.map((course) => <tr key={course.id}><th scope="row"><span className={styles.categoryName}>{dot(course.id)}{course.name}</span></th><td>{course.total}</td><td>{course.completed}</td></tr>)}</tbody></table></div></div>}
         </section>
-        <details className={styles.matrixDetails}><summary>Derslerin gün dağılımı<ChevronDown size={18} aria-hidden="true" /></summary><div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Derslerin gün dağılımı tablosu"><table className={`${styles.table} ${styles.matrix}`}><thead><tr><th scope="col">Ders</th>{weekdays.map((day, index) => <th scope="col" key={day}><abbr title={day}>{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"][index]}</abbr></th>)}</tr></thead><tbody>{categories.map((category) => { const row = analysis.categories.find((item) => item.id === category.id); return <tr key={category.id}><th scope="row"><span className={styles.categoryName}>{dot(category.id)}{category.name}</span></th>{weekdays.map((day, index) => <td key={day}>{row?.days[index] ?? 0}</td>)}</tr>; })}</tbody></table></div></details>
-        <section><div className={styles.sectionHeading}><h2>Kullandığın başlıklar</h2><span>{analysis.titles.length} farklı başlık</span></div>
+        <details className={`${styles.panel} ${styles.matrixDetails}`}><summary>Derslerin gün dağılımı<ChevronDown size={18} aria-hidden="true" /></summary><div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Derslerin gün dağılımı tablosu"><table className={`${styles.table} ${styles.matrix}`}><thead><tr><th scope="col">Ders</th>{weekdays.map((day, index) => <th scope="col" key={day}><abbr title={day}>{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"][index]}</abbr></th>)}</tr></thead><tbody>{categories.map((category) => { const row = analysis.categories.find((item) => item.id === category.id); return <tr key={category.id}><th scope="row"><span className={styles.categoryName}>{dot(category.id)}{category.name}</span></th>{weekdays.map((day, index) => <td key={day}>{row?.days[index] ?? 0}</td>)}</tr>; })}</tbody></table></div></details>
+        <details className={`${styles.panel} ${styles.matrixDetails}`}><summary>Kullandığın başlıklar<span className={styles.detailCount}>{analysis.titles.length} farklı başlık</span><ChevronDown size={18} aria-hidden="true" /></summary>
           {!analysis.titles.length ? <p className={styles.empty}>Bu aralıkta kullanılan başlık yok.</p> : <div className={styles.tableScroll}><table className={styles.table}><thead><tr><th scope="col">Başlık / ders</th><th scope="col">Kullanım</th><th scope="col">Biten</th></tr></thead><tbody>{analysis.titles.map((title) => <tr key={title.key}><th scope="row">{title.title}<small>{title.categories.map((id) => names[id] ?? "Diğer").join(" · ")}</small></th><td>{title.total}</td><td>{title.completed}</td></tr>)}</tbody></table></div>}
-        </section>
+        </details>
       </div>}
       <p className={styles.footnote}>Görevler sayıya, süreler günlük kayıtlarına dayanır. Taşınan görevler mevcut gününde, kopyalar ayrı görev olarak sayılır.</p>
     </>}

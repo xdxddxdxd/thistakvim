@@ -111,7 +111,7 @@ test("grouped database counts retain task, course, title and weekday totals", ()
 
 test("fair comparison excludes today and pairs only recorded matching weekdays including zero", () => {
   const data: AnalysisData = {
-    asOf: "2026-10-02", closedThrough: "2026-10-01", trend: [], monthlyTrend: [],
+    asOf: "2026-10-02", closedThrough: "2026-10-01", chartStudyTimes: [], chartMonth: "2026-10-01", chartMonthEnd: "2026-10-31",
     tasks: [task("1", "2026-09-28", true), task("2", "2026-10-02", true), task("3", "2026-10-04")],
     previous: [task("4", "2026-09-21", true), task("5", "2026-09-25", true)],
     studyTimes: [{ date: "2026-09-28", minutes: 0 }, { date: "2026-09-29", minutes: 120 }, { date: "2026-10-02", minutes: 600 }],
@@ -135,7 +135,7 @@ test("fair comparison excludes today and pairs only recorded matching weekdays i
 });
 
 test("comparison cannot invent a zero-minute baseline from missing records", () => {
-  const result = compareClosedDays({ tasks: [], previous: [], studyTimes: [{ date: "2026-09-28", minutes: 120 }], previousStudyTimes: [], asOf: "2026-10-02", closedThrough: "2026-10-01", trend: [], monthlyTrend: [] }, "2026-09-28");
+  const result = compareClosedDays({ tasks: [], previous: [], studyTimes: [{ date: "2026-09-28", minutes: 120 }], previousStudyTimes: [], asOf: "2026-10-02", closedThrough: "2026-10-01", chartStudyTimes: [], chartMonth: "2026-10-01", chartMonthEnd: "2026-10-31" }, "2026-09-28");
   assert.equal(result.pairedStudyDays, 0);
   assert.equal(result.current.totalMinutes, null);
   assert.equal(result.previous.totalMinutes, null);
