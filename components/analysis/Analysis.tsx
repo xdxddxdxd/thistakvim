@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react";
 import { addDays, dateLabel, weekLabel, weekStart } from "@/lib/dates";
-import { analyzeStudyTime, analyzeTasks, compareClosedDays, weekdays, weeklySummary, type AnalysisData } from "@/lib/analysis";
+import { analyzeStudyTime, analyzeTasks, compareClosedDays, weekdayIndex, weekdays, weeklySummary, type AnalysisData } from "@/lib/analysis";
 import type { Category, Theme } from "@/lib/types";
 import { analysisUrl, type AnalysisLocation } from "@/lib/analysis-location";
 import { CompletionRing, CourseDonut, TrendChart, duration, percent } from "./Charts";
@@ -22,6 +22,9 @@ export default function Analysis({ categories, theme, initialStart, currentStart
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [titleCourseFilter, setTitleCourseFilter] = useState<string | null>(null);
+  const [titleSearch, setTitleSearch] = useState("");
   const categoryMap = useMemo(() => Object.fromEntries(categories.map((category) => [category.id, category])), [categories]);
   const names = useMemo(() => Object.fromEntries(categories.map((category) => [category.id, category.name])), [categories]);
   const analysis = useMemo(() => analyzeTasks(data.tasks, scope === "week" ? start : undefined), [data.tasks, scope, start]);
@@ -29,6 +32,30 @@ export default function Analysis({ categories, theme, initialStart, currentStart
   const comparison = useMemo(() => data.closedThrough ? compareClosedDays(data, start) : null, [data, start]);
   const maxStudyMinutes = Math.max(1, ...studyTime.daily.map((day) => (scope === "all" ? day.averageMinutes : day.totalMinutes) ?? 0));
   const courses = analysis.categories.map((course) => ({ ...course, name: names[course.id] ?? "Diğer", color: categoryMap[course.id]?.accent_color ?? "var(--ink)" }));
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId) ?? null;
+  const courseDays = useMemo(() => {
+    if (!selectedCourse) return [];
+    const grouped = new Map<string, typeof analysis.tasks>();
+    analysis.tasks.filter((task) => task.category_id === selectedCourse.id).forEach((task) => {
+      const rows = grouped.get(task.date) ?? [];
+      rows.push(task);
+      grouped.set(task.date, rows);
+    });
+    return [...grouped].sort(([a], [b]) => a.localeCompare(b)).map(([date, tasks]) => ({
+      date,
+      weekday: weekdays[weekdayIndex(date)],
+      tasks: tasks.sort((a, b) => a.title.localeCompare(b.title, "tr")),
+    }));
+  }, [analysis.tasks, selectedCourse]);
+  const titleCourses = categories.filter((category) => analysis.titles.some((title) => title.categories.includes(category.id)));
+  const activeTitleCourseFilter = titleCourses.some((category) => category.id === titleCourseFilter) ? titleCourseFilter : null;
+  const normalizedTitleSearch = titleSearch.trim().toLocaleLowerCase("tr-TR");
+  const visibleTitles = analysis.titles.filter((title) =>
+    (!activeTitleCourseFilter || title.categories.includes(activeTitleCourseFilter)) &&
+    (!normalizedTitleSearch || title.title.toLocaleLowerCase("tr-TR").includes(normalizedTitleSearch) || title.categories.some((id) => (names[id] ?? "Diğer").toLocaleLowerCase("tr-TR").includes(normalizedTitleSearch))),
+  );
+  const taskDayCount = new Set(analysis.tasks.map((task) => task.date)).size;
+  const averageTasksPerDay = scope === "week" ? analysis.total / 7 : taskDayCount ? analysis.total / taskDayCount : 0;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -82,7 +109,9 @@ export default function Analysis({ categories, theme, initialStart, currentStart
     {loading ? <div className={styles.message} role="status">Analiz yükleniyor…</div> : error ? <div className={styles.message} role="alert"><p>{error}</p><button className="button secondary" onClick={() => setRetry((value) => value + 1)}><RefreshCw size={17} /> Tekrar dene</button></div> : <>
       {section === "summary" && <>
         <section className={`${styles.panel} ${styles.summary}`} aria-labelledby="short-summary">
-          <div className={styles.summaryCopy}><h2 id="short-summary">{scope === "week" ? "Haftanın özeti" : "Genel görünüm"}</h2><p>{scope === "all" && !analysis.total ? "Henüz görev yok. Planına görev eklediğinde genel dağılımın burada görünecek." : weeklySummary(analysis, names)}</p></div>
+          <div className={styles.summaryCopy}><h2 id="short-summary">{scope === "week" ? "Haftanın özeti" : "Genel görünüm"}</h2><p>{scope === "all" && !analysis.total ? "Henüz görev yok. Planına görev eklediğinde genel dağılımın burada görünecek." : weeklySummary(analysis, names)}</p>
+            <dl className={styles.summaryMetrics}><div><dt>{scope === "week" ? "Günlük görev ort." : "Planlı gün ort."}</dt><dd>{averageTasksPerDay.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}</dd></div><div><dt>Görev olan gün</dt><dd>{taskDayCount}</dd></div><div><dt>Aktif ders</dt><dd>{analysis.categories.length}</dd></div></dl>
+          </div>
           <CompletionRing total={analysis.total} completed={analysis.completed} rate={analysis.rate} />
         </section>
         <div className={styles.overview}>
@@ -118,11 +147,32 @@ export default function Analysis({ categories, theme, initialStart, currentStart
       </>}
       {section === "courses" && <div className={styles.courseSections}>
         <section className={styles.panel} aria-labelledby="courses-heading"><div className={styles.sectionHeading}><h2 id="courses-heading">Ders dağılımı</h2><span>{scope === "week" ? "Seçili hafta" : "Tüm planlar"}</span></div>
-          {!analysis.total ? <p className={styles.empty}>Bu aralıkta görev yok. Planına görev eklediğinde derslerin dağılımı burada görünecek.</p> : <div className={styles.courseOverview}><CourseDonut courses={courses} /><div className={styles.tableScroll}><table className={styles.table}><thead><tr><th scope="col">Ders</th><th scope="col">Planlanan</th><th scope="col">Biten</th></tr></thead><tbody>{courses.map((course) => <tr key={course.id}><th scope="row"><span className={styles.categoryName}>{dot(course.id)}{course.name}</span></th><td>{course.total}</td><td>{course.completed}</td></tr>)}</tbody></table></div></div>}
+          {!analysis.total ? <p className={styles.empty}>Bu aralıkta görev yok. Planına görev eklediğinde derslerin dağılımı burada görünecek.</p> : <div className={styles.courseOverview}>
+            <CourseDonut courses={courses} total={analysis.total} selectedCourseId={selectedCourse?.id ?? null} onSelect={(id) => setSelectedCourseId((current) => current === id ? null : id)} />
+            <section className={styles.courseDetail} aria-live="polite" aria-label="Seçilen dersin görevleri">
+              {selectedCourse ? <>
+                <div className={styles.courseDetailHeading}><h3><span className={styles.dot} style={{ background: selectedCourse.color }} />{selectedCourse.name}</h3><span>{selectedCourse.total} görev · {courseDays.length} gün</span></div>
+                <div className={styles.courseDayList}>{courseDays.map((day) => <section className={styles.courseDay} key={day.date} aria-label={`${day.weekday}, ${dateLabel(day.date, { day: "numeric", month: "long" })}`}>
+                  <h4><span>{day.weekday}</span><time dateTime={day.date}>{dateLabel(day.date, { day: "numeric", month: "short" })}</time></h4>
+                  <ul>{day.tasks.map((task, index) => <li key={`${task.title}-${task.completed}-${index}`} className={task.completed ? styles.completedTask : ""}><span>{task.title}{(task.count ?? 1) > 1 && <small>×{task.count}</small>}</span><small>{task.completed ? "Tamamlandı" : "Planlandı"}</small></li>)}</ul>
+                </section>)}</div>
+              </> : <p className={styles.courseDetailEmpty}>Bir derse dokun; o dersteki görevleri günlerine göre burada gör.</p>}
+            </section>
+          </div>}
         </section>
         <details className={`${styles.panel} ${styles.matrixDetails}`}><summary>Derslerin gün dağılımı<ChevronDown size={18} aria-hidden="true" /></summary><div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Derslerin gün dağılımı tablosu"><table className={`${styles.table} ${styles.matrix}`}><thead><tr><th scope="col">Ders</th>{weekdays.map((day, index) => <th scope="col" key={day}><abbr title={day}>{["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"][index]}</abbr></th>)}</tr></thead><tbody>{categories.map((category) => { const row = analysis.categories.find((item) => item.id === category.id); return <tr key={category.id}><th scope="row"><span className={styles.categoryName}>{dot(category.id)}{category.name}</span></th>{weekdays.map((day, index) => <td key={day}>{row?.days[index] ?? 0}</td>)}</tr>; })}</tbody></table></div></details>
         <details className={`${styles.panel} ${styles.matrixDetails}`}><summary>Kullandığın başlıklar<span className={styles.detailCount}>{analysis.titles.length} farklı başlık</span><ChevronDown size={18} aria-hidden="true" /></summary>
-          {!analysis.titles.length ? <p className={styles.empty}>Bu aralıkta kullanılan başlık yok.</p> : <div className={styles.tableScroll}><table className={styles.table}><thead><tr><th scope="col">Başlık / ders</th><th scope="col">Kullanım</th><th scope="col">Biten</th></tr></thead><tbody>{analysis.titles.map((title) => <tr key={title.key}><th scope="row">{title.title}<small>{title.categories.map((id) => names[id] ?? "Diğer").join(" · ")}</small></th><td>{title.total}</td><td>{title.completed}</td></tr>)}</tbody></table></div>}
+          {!analysis.titles.length ? <p className={styles.empty}>Bu aralıkta kullanılan başlık yok.</p> : <>
+            <div className={styles.titleFilters}>
+              <div className={styles.titleCourseFilters} role="group" aria-label="Başlıkları derse göre filtrele">
+                <button type="button" aria-pressed={activeTitleCourseFilter === null} onClick={() => setTitleCourseFilter(null)}>Tüm dersler</button>
+                {titleCourses.map((category) => <button type="button" key={category.id} aria-pressed={activeTitleCourseFilter === category.id} onClick={() => setTitleCourseFilter(category.id)}>{category.name}</button>)}
+              </div>
+              <label className={styles.titleSearch}><Search size={16} aria-hidden="true" /><span className="sr-only">Başlıklarda ara</span><input type="search" value={titleSearch} onChange={(event) => setTitleSearch(event.target.value)} placeholder="Başlık ara" /></label>
+            </div>
+            <p className={styles.filteredCount} aria-live="polite">{visibleTitles.length} / {analysis.titles.length} başlık</p>
+            {!visibleTitles.length ? <p className={styles.empty}>Bu filtreye uygun başlık yok.</p> : <div className={`${styles.tableScroll} ${styles.titleTableScroll}`} tabIndex={0} role="region" aria-label="Filtrelenmiş başlıklar"><table className={styles.table}><thead><tr><th scope="col">Başlık / ders</th><th scope="col">Kullanım</th><th scope="col">Biten</th></tr></thead><tbody>{visibleTitles.map((title) => <tr key={title.key}><th scope="row">{title.title}<small>{title.categories.map((id) => names[id] ?? "Diğer").join(" · ")}</small></th><td>{title.total}</td><td>{title.completed}</td></tr>)}</tbody></table></div>}
+          </>}
         </details>
       </div>}
       <p className={styles.footnote}>Görevler sayıya, süreler günlük kayıtlarına dayanır. Taşınan görevler mevcut gününde, kopyalar ayrı görev olarak sayılır.</p>
