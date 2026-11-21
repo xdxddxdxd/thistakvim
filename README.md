@@ -52,6 +52,11 @@ Doğrulama bağlantısının farklı tarayıcıda da çalışması için Confirm
 şablonundaki bağlantıyı `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email`
 adresine yönlendirin.
 
+Google ile oturum açmak için Google sağlayıcısını Supabase Auth panelinde
+etkinleştirin. Google OAuth istemcisinin dönüş adresi Supabase'in
+`/auth/v1/callback` adresi, Supabase Redirect URLs listesine eklenecek dönüş
+adresi ise uygulamanın `/api/auth/confirm` rotasıdır.
+
 ## Özellikler
 
 - Pazartesi–Pazar planı, gerçek tarihler ve Europe/Istanbul gün mantığı.

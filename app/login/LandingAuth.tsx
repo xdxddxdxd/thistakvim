@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { ArrowRight, X } from "lucide-react";
 import { useState } from "react";
 import AuthForm from "@/components/AuthForm";
+import GoogleSignIn from "./GoogleSignIn";
 import styles from "./page.module.css";
 
 export default function LandingAuth({ initiallyOpen, initiallyRegistering, loginError, signupError, checkEmail }: {
@@ -44,6 +45,7 @@ export default function LandingAuth({ initiallyOpen, initiallyRegistering, login
             <button type="button" aria-pressed={!register} onClick={() => setRegister(false)}>Giriş yap</button>
             <button type="button" aria-pressed={register} onClick={() => setRegister(true)}>Kayıt ol</button>
           </div>
+          <GoogleSignIn />
           <AuthForm key={register ? "register" : "login"} mode={register ? "register" : "login"}
             initialError={register ? signupError : loginError} checkEmail={register && checkEmail} />
         </Dialog.Content>

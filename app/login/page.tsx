@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import AuthForm from "@/components/AuthForm";
 import { loginErrorMessage, signupErrorMessage } from "@/lib/login";
 import { serverClient } from "@/lib/supabase/server";
+import GoogleSignIn from "./GoogleSignIn";
 import LandingAuth from "./LandingAuth";
 import { WeeklyDemo } from "./LandingDemo";
 import styles from "./page.module.css";
@@ -45,6 +46,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
                 <a href="/login?giris=1#giris">Giriş yap</a>
                 <a href="/login?kayit=1#giris">Kayıt ol</a>
               </nav>
+              <GoogleSignIn />
               <AuthForm mode={registering ? "register" : "login"} initialError={registering ? signupError : loginError} checkEmail={checkEmail} />
             </section>
           </noscript>

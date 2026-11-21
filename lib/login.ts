@@ -7,7 +7,8 @@ export const loginErrors = {
   invalid: "E-posta adresini veya kullanıcı adını ve şifreni gir.",
   credentials: "Giriş bilgileri yanlış.",
   unconfirmed: "Giriş yapmak için önce e-posta adresini doğrula.",
-  confirmation: "Doğrulama bağlantısı geçersiz veya süresi dolmuş. Kayıt ekranından tekrar dene.",
+  confirmation: "Oturum açılamadı. Giriş ekranından tekrar dene.",
+  google: "Google ile giriş başlatılamadı. Tekrar dene.",
   rate: "Çok fazla deneme yaptın. Biraz bekleyip tekrar dene.",
   request: "Geçersiz istek.",
 } as const;

@@ -453,6 +453,48 @@
 .authDialog .switcher { margin-bottom: 16px; }
 .authDialog .switcher button { flex: 1; }
 
+.googleSignIn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid #747775;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #1f1f1f;
+  font: 500 14px / 20px "Google Sans", Arial, sans-serif;
+}
+
+.googleSignIn::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex: none;
+  background: url("./google-g.png") center / contain no-repeat;
+}
+
+.googleSignIn:hover { background-color: #f8fafd; }
+
+.authDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.authDivider::before,
+.authDivider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--rule);
+}
+
+
 .authDialog :global(.login-form label),
 .nativeEntry :global(.login-form label) { font-size: 14px; }
 
