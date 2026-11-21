@@ -130,7 +130,7 @@ export default function TaskModal({
             İptal
           </button>
           <button
-            className="button primary"
+            className="button secondary"
             disabled={busy || !input.title.trim()}
           >
             {busy ? <LoaderCircle size={18} className="spinner" /> : "Kaydet"}

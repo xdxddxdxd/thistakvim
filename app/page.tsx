@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { serverClient } from "@/lib/supabase/server";
 import Planner from "@/components/planner/Planner";
-import { today } from "@/lib/dates";
+import { isCalendarDate, today } from "@/lib/dates";
 import type { Category } from "@/lib/types";
-import { validAnalysisDate } from "@/lib/analysis";
 export const dynamic = "force-dynamic";
 export default async function Home({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const params = await searchParams;
@@ -14,7 +13,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   if (!user) redirect("/login");
   const [categoryResult, profile] = await Promise.all([
     client.from("categories").select("*").order("position"),
-    client.from("profiles").select("username,theme").eq("id", user.id).single(),
+    client.from("profiles").select("username,display_name,theme").eq("id", user.id).single(),
   ]);
   const { data, error } = categoryResult;
   if (error || !data?.length || profile.error)
@@ -29,9 +28,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
       categories={data as Category[]}
       initialToday={today(new Date(initialNow))}
       initialNow={initialNow}
-      username={profile.data.username}
+      username={profile.data.display_name ?? profile.data.username}
       initialTheme={profile.data.theme === "dark" ? "dark" : "paper"}
-      initialDate={validAnalysisDate(params.date) ? params.date : undefined}
+      initialDate={isCalendarDate(params.date) ? params.date : undefined}
     />
   );
 }

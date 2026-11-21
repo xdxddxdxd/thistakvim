@@ -5,3 +5,7 @@ The PDF embeds static Regular (400) and Bold (700) instances at optical size 14,
 generated from the upstream variable TTF using fontTools 4.66.1. Static instances
 avoid variable-font subsetting defects in PDF readers. The UI uses Fontsource's
 self-hosted variable DM Sans and Fredoka separately.
+
+The landing-page accent uses Barlow Condensed Bold from Google Fonts in a WOFF
+container. See BarlowCondensed-OFL.txt for its license and the
+[upstream font files](https://github.com/google/fonts/tree/main/ofl/barlowcondensed).

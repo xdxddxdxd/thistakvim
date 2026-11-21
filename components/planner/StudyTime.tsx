@@ -107,7 +107,7 @@ export default function StudyTime({ date, editable, ref, onSaving, disabled = fa
         <label>Saat<input aria-label="Çalışılan saat" type="number" inputMode="numeric" min={0} max={24} step={1} value={hours} disabled={disabled || saving} onChange={(event) => { setHours(event.target.value); setSaveError(""); }} /></label>
         <span className={styles.separator} aria-hidden="true">:</span>
         <label>Dakika<input aria-label="Çalışılan dakika" type="number" inputMode="numeric" min={0} max={59} step={1} value={minutes} disabled={disabled || saving} onChange={(event) => { setMinutes(event.target.value); setSaveError(""); }} /></label>
-        <button className={"button primary " + styles.save} type="submit" disabled={disabled || saving || !dirty || !!conflict}>
+        <button className={"button secondary " + styles.save} type="submit" disabled={disabled || saving || !dirty || !!conflict}>
           {saving && <LoaderCircle size={16} className="spinner" />}{saving ? "Kaydediliyor" : "Kaydet"}
         </button>
       </div>

@@ -167,7 +167,7 @@ export default function ProfileModal({
           Kapat
         </button>
         <button
-          className="button primary"
+          className="button secondary"
           disabled={disabled || !changed}
           onClick={async () => {
             setError("");

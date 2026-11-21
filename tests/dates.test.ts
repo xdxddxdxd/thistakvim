@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   addDays,
+  isCalendarDate,
   isLocked,
   today,
   tytDaysRemaining,
@@ -52,4 +53,10 @@ test("Istanbul day lock occurs at 23:59 even before UTC midnight", () => {
     isLocked("2026-10-02", true, new Date("2026-10-01T20:59:00Z")),
     true,
   );
+});
+
+test("date query validation rejects impossible days and arrays", () => {
+  assert.equal(isCalendarDate("2026-02-30"), false);
+  assert.equal(isCalendarDate(["2026-10-01"]), false);
+  assert.equal(isCalendarDate("2028-02-29"), true);
 });

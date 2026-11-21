@@ -1,38 +1,34 @@
-import { NextResponse } from "next/server";
-import { serverClient } from "@/lib/supabase/server";
+import { authResponse, isNativeAuthForm, readAuthInput } from "@/lib/auth-request";
+import { loginErrors, maxEmail, maxPassword, normalizedEmail, type LoginError } from "@/lib/login";
 import { isSameOrigin } from "@/lib/request";
-import { loginErrors, type LoginError } from "@/lib/login";
+import { serverClient } from "@/lib/supabase/server";
+
 export async function POST(request: Request) {
-  const nativeForm = request.headers.get("content-type")?.split(";", 1)[0].trim() === "application/x-www-form-urlencoded";
-  const reply = (error: LoginError | null, status: number) => nativeForm
-    ? new NextResponse(null, { status: 303, headers: {
-        Location: error ? `/login?error=${error}#giris` : "/",
-        "Cache-Control": "private, no-store",
-      } })
-    : NextResponse.json(error ? { error: loginErrors[error] } : { ok: true }, {
-        status, headers: { "Cache-Control": "private, no-store" },
-      });
-  if (!isSameOrigin(request))
-    return reply("request", 403);
-  const body = nativeForm
-    ? await request.formData().then((form) => ({ username: form.get("username"), password: form.get("password") })).catch(() => null)
-    : await request.json().catch(() => null);
-  if (
-    !body ||
-    typeof body.username !== "string" ||
-    typeof body.password !== "string" ||
-    body.password.length > 256
-  )
+  const native = isNativeAuthForm(request);
+  const reply = (error: LoginError | null, status: number) => authResponse(
+    native,
+    error ? `/login?error=${error}#giris` : "/",
+    error ? { error: loginErrors[error] } : { ok: true },
+    status,
+  );
+  if (!isSameOrigin(request)) return reply("request", 403);
+
+  const body = await readAuthInput(request, native);
+  if (typeof body?.username !== "string" || typeof body.password !== "string" ||
+      body.username.length > maxEmail || !body.password || body.password.length > maxPassword) {
     return reply("invalid", 400);
+  }
+
+  const identifier = body.username.trim();
+  const legacyUser = process.env.PLANNER_USERNAME?.trim().toLocaleLowerCase("tr-TR");
+  const email = legacyUser && identifier.toLocaleLowerCase("tr-TR") === legacyUser
+    ? process.env.PLANNER_AUTH_EMAIL
+    : normalizedEmail(identifier);
+  if (!email) return reply("credentials", 401);
+
   const client = await serverClient();
-  const validName =
-    body.username.trim().toLocaleLowerCase("tr-TR") ===
-    process.env.PLANNER_USERNAME?.toLocaleLowerCase("tr-TR");
-  const { error } = await client.auth.signInWithPassword({
-    email: process.env.PLANNER_AUTH_EMAIL!,
-    password: validName ? body.password : crypto.randomUUID(),
-  });
-  if (error)
-    return reply(error.status === 429 ? "rate" : "credentials", 401);
-  return reply(null, 200);
+  const { error } = await client.auth.signInWithPassword({ email, password: body.password });
+  if (error?.status === 429) return reply("rate", 429);
+  if (error?.code === "email_not_confirmed") return reply("unconfirmed", 403);
+  return error ? reply("credentials", 401) : reply(null, 200);
 }

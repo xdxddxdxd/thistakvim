@@ -13,6 +13,11 @@ export function today(now = new Date()): string {
 export function dateObject(value: string) {
   return new Date(`${value}T12:00:00Z`);
 }
+export function isCalendarDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = dateObject(value);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value && value >= "1900-01-01" && value <= "9998-12-31";
+}
 export function tytDaysRemaining(currentDate = today()): number {
   return Math.max(0, Math.round(
     (dateObject(TYT_EXAM_DATE).getTime() - dateObject(currentDate).getTime()) / 86400000,

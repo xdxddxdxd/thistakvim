@@ -134,6 +134,7 @@ svg {
   border: 0;
 }
 .planner-shell {
+  --display: var(--body);
   max-width: 1400px;
   margin: 32px auto;
   padding: 32px 36px 22px;
@@ -189,9 +190,6 @@ svg {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.week-caption { display: flex; align-items: center; gap: 16px; }
-.analysis-entry { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 6px; font-size: 12px; font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
-.analysis-entry:hover { background: var(--input); border-radius: 8px; }
 .header-end {
   display: flex;
   justify-content: flex-end;
@@ -1645,12 +1643,12 @@ input[type="radio"] {
   .locked-badge {
     font-size: 10px;
   }
-  .add-task {
+  .detail-header .add-task {
     width: 44px;
     padding: 0;
     flex-shrink: 0;
   }
-  .add-task > span {
+  .detail-header .add-task > span {
     display: none;
   }
   .detail-body {

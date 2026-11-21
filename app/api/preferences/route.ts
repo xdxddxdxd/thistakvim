@@ -11,7 +11,7 @@ export async function GET() {
   if (!user)
     return NextResponse.json({ error: "Yeniden giriş yap." }, { status: 401 });
   const [profile, categories] = await Promise.all([
-    client.from("profiles").select("username,theme").eq("id", user.id).single(),
+    client.from("profiles").select("username,display_name,theme").eq("id", user.id).single(),
     client.from("categories").select("*").order("position"),
   ]);
   if (profile.error || categories.error)
@@ -20,7 +20,7 @@ export async function GET() {
       { status: 500 },
     );
   return NextResponse.json(
-    { ...profile.data, categories: categories.data },
+    { username: profile.data.display_name ?? profile.data.username, theme: profile.data.theme, categories: categories.data },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

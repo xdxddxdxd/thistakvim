@@ -1,6 +1,6 @@
 # Haftalık Plan
 
-YKS için tek kullanıcılı, Türkçe haftalık görev planlayıcısı. Tablet landscape öncelikli arayüz; günlük ve haftalık plan, analiz ve haftalık PDF çıktısı sunar.
+YKS için Türkçe haftalık görev planlayıcısı. Her kullanıcı kendi hesabıyla kendi planına erişir. Tablet landscape öncelikli arayüz; günlük ve haftalık plan ile haftalık PDF çıktısı sunar.
 
 Canlı uygulama: [thistakvim.vercel.app](https://thistakvim.vercel.app)
 
@@ -13,14 +13,14 @@ npm ci
 Copy-Item .env.example .env.local
 ```
 
-`.env.local` içindeki değişkenleri kendi Supabase projeniz ve Auth hesabınızla doldurun:
+`.env.local` içindeki değişkenleri kendi Supabase projenize göre doldurun:
 
 | Değişken | Kullanım |
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase proje adresi |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key |
-| `PLANNER_USERNAME` | Uygulamadaki kullanıcı adı |
-| `PLANNER_AUTH_EMAIL` | Kullanıcı adının eşlendiği Supabase Auth e-postası; yalnız sunucuda kullanılır |
+| `PLANNER_USERNAME` | İsteğe bağlı eski kullanıcı adı eşlemesi |
+| `PLANNER_AUTH_EMAIL` | Eski kullanıcı adına karşılık gelen Auth e-postası. Yalnız sunucuda kullanılır |
 
 Auth şifresi Supabase tarafından yönetilir. Şifre, service-role key ve yerel kimlik dosyaları depoya eklenmez.
 
@@ -37,6 +37,21 @@ npm run build
 npm start
 ```
 
+## Herkese açık kayıt
+
+Supabase Auth ayarlarında e-posta sağlayıcısı ve yeni kullanıcı kaydı açık olmalıdır.
+Yeni kullanıcılar e-posta ve şifreyle giriş yapar. Eski kullanıcı adı eşlemesi
+`PLANNER_USERNAME` ve `PLANNER_AUTH_EMAIL` tanımlı olduğu sürece çalışır.
+
+E-posta doğrulamasını açmak için Supabase'te Confirm Email ve özel SMTP
+yapılandırın. URL Configuration bölümünde site adresini seçin ve
+`https://thistakvim.vercel.app/api/auth/confirm` adresini yönlendirme listesine
+ekleyin. Yerel geliştirmede kullandığınız adres için aynı rotayı ayrıca ekleyin.
+Uygulama varsayılan PKCE dönüşünü ve e-posta şablonundan gelen token hash'i destekler.
+Doğrulama bağlantısının farklı tarayıcıda da çalışması için Confirm signup
+şablonundaki bağlantıyı `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email`
+adresine yönlendirin.
+
 ## Özellikler
 
 - Pazartesi–Pazar planı, gerçek tarihler ve Europe/Istanbul gün mantığı.
@@ -48,9 +63,6 @@ npm start
 - Profilde Açık / Koyu temaları ve iki temada da korunan ders renkleri.
 - Başlığın altında 19 Haziran 2027 hedef tarihine kalan gün, YKS sayacı olarak gösterilir; İstanbul tarihine göre güncellenir.
 - Yalnız seçili haftanın tek sayfa A4 yatay PDF’si; yedi gün yan yana, Türkçe fontlarla görev başlıkları ve ders adları. Yoğun haftalarda ortak punto küçülür; okunaklı sığmayan içerik açık bir hata verir.
-- Ayrı `/analiz` sayfasında hafta özeti, gün ve ders dağılımları, ders × gün tablosu, başlık kullanımı, kalan görevler ve önceki haftayla karşılaştırma.
-- Analizde toplam çalışma süresi, günlük süre dağılımı ve önceki haftanın süresiyle karşılaştırma. Süre girilmeyen günler 0 dakika kaydedilen günlerden ayrı gösterilir.
-- Analizden ilgili göreve geçiş; seçili tarih ve analiz filtrelerinin URL’de korunması.
 - Başka cihazdaki değişikliklere karşı not ve çalışma süresinde sürüm kontrolü.
 
 İnternet bağlantısı gerekir. Uygulamada saatli program, kronometre veya sohbet asistanı bulunmaz.
@@ -61,9 +73,8 @@ npm start
 | --- | --- |
 | `app/` | Next.js sayfaları ve API rotaları |
 | `components/planner/` | Planlayıcı, görev ve profil bileşenleri |
-| `components/analysis/` | Analiz ekranı ve stilleri |
 | `components/ui/` | Ortak modal bileşeni |
-| `lib/` | Tarih, durum, analiz, Supabase ve PDF yardımcıları |
+| `lib/` | Tarih, durum, Supabase ve PDF yardımcıları |
 | `public/fonts/` | PDF için yerel fontlar ve lisansları |
 | `supabase/migrations/` | Veritabanı şeması ve migration geçmişi |
 | `supabase/tests/` | Rollback içinde çalışan veritabanı doğrulamaları |
@@ -75,7 +86,7 @@ Next.js 16 App Router, React, TypeScript, Tailwind 4, Supabase SSR/Auth/PostgreS
 
 Tablolar: `profiles`, `categories`, `tasks`, `day_notes`, `day_status`, `day_study_time`. RLS her kullanıcıyı kendi kayıtlarıyla sınırlar. API rotaları oturumu doğrular; değişiklikler yetkili PostgreSQL rutinlerinden geçer. Görev işlemleri transaction, kullanıcı kilidi ve kayıt sürümü kontrolü kullanır.
 
-Boş bir Supabase projesi için migration dosyalarını tarih sırasıyla uygulayın. Auth hesabını Supabase yönetim araçlarıyla oluşturun; ilgili `profiles` ve `categories` kayıtlarını ekleyin. Mevcut üretim projesine uygulanmış migration’ları tekrar çalıştırmayın. Migration geçmişi, kaldırılmış özelliklerin kurulum ve kaldırma adımlarını da içerir; son şemada asistan tabloları veya rutinleri bulunmaz.
+Boş bir Supabase projesi için migration dosyalarını tarih sırasıyla uygulayın. Yeni kullanıcılar Kayıt ol ekranıyla hesap açar. Supabase kullanıcıyı etkinleştirince profil ve yedi başlangıç dersi oluşturur. Mevcut üretim projesine uygulanmış migration’ları tekrar çalıştırmayın. Migration geçmişi, kaldırılmış özelliklerin kurulum ve kaldırma adımlarını da içerir; son şemada asistan tabloları veya rutinleri bulunmaz.
 
 `planner-close-istanbul-day` Cron işi UTC 20:59’da çalışır. Cron gecikse bile tarih koruması kapanan güne yazımı engeller; plan okunurken güvenli kapanış fallback’i eksik durum kayıtlarını tamamlar. Tamamlanmayan görevler kendi tarihlerinde kalır.
 
@@ -92,7 +103,7 @@ npm test
 
 ## Vercel yayını
 
-Vercel projesi `thistakvim`, framework Next.js, üretim dalı `main` olarak kullanılır. Yukarıdaki dört ortam değişkeni Vercel’in Production ortamında tanımlanır; yerel `.env.local` yüklenmez. `vercel.json` fonksiyon bölgesini Supabase veritabanına yakın Dublin (`dub1`) olarak belirler.
+Vercel projesi `thistakvim`, framework Next.js, üretim dalı `main` olarak kullanılır. Supabase adresi, publishable key ve kullanılan eski giriş eşlemesi Vercel’in Production ortamında tanımlanır; yerel `.env.local` yüklenmez. `vercel.json` fonksiyon bölgesini Supabase veritabanına yakın Dublin (`dub1`) olarak belirler.
 
 Bağlı GitHub deposunda `main` güncellendiğinde Vercel üretim yayını oluşturur. Gerektiğinde yerelden yayınlamak için:
 

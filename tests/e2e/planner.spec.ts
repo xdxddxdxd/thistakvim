@@ -29,8 +29,9 @@ test("complete tablet planner flow with real Supabase persistence", async ({
     JSON.stringify({ marker, monday }),
   );
   await page.goto("/login");
+  await page.getByRole("link", { name: "Giriş yap", exact: true }).click();
   await page
-    .getByLabel("Kullanıcı adı", { exact: true })
+    .getByLabel("E-posta veya kullanıcı adı", { exact: true })
     .fill(account.username);
   await page.getByLabel("Şifre", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Giriş yap", exact: true }).click();

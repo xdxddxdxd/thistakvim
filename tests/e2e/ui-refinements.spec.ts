@@ -107,8 +107,9 @@ test("clean forms and explicit cross-day drag choices", async ({ page }) => {
     await route.fulfill({ json: { dates, tasks: tasks.filter((row) => dates.includes(row.date)) } });
   });
   await page.goto("/login");
+  await page.getByRole("link", { name: "Giriş yap", exact: true }).click();
   await page
-    .getByLabel("Kullanıcı adı", { exact: true })
+    .getByLabel("E-posta veya kullanıcı adı", { exact: true })
     .fill(account.username);
   await page.getByLabel("Şifre", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Giriş yap", exact: true }).click();

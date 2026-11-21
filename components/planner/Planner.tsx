@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -22,7 +21,6 @@ import {
 } from "@dnd-kit/sortable";
 import {
   Check,
-  ChartNoAxesColumn,
   ChevronLeft,
   ChevronRight,
   ClipboardPen,
@@ -87,7 +85,6 @@ export default function Planner({
   initialTheme: Theme;
   initialDate?: string;
 }) {
-  const router = useRouter();
   const openingDate = initialDate ?? initialToday;
   const [currentTime, setCurrentTime] = useState(initialNow);
   const studyRef = useRef<StudyTimeHandle>(null);
@@ -141,6 +138,7 @@ export default function Planner({
     ),
     locked = isLocked(selected, finished, new Date(currentTime)) || lockedNoteDate === selected;
   const working = busy || loading || studySaving || taskBusy;
+  const showEmptyDay = !loading && dayTasks.length === 0;
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, {
@@ -662,12 +660,7 @@ export default function Planner({
               <ChevronRight />
             </button>
           </div>
-          <div className="week-caption">
-            <span className="week-range" aria-live="polite">{weekLabel(start)}</span>
-            <button className="analysis-entry" disabled={working} onClick={async () => {
-              if (await persistDay()) router.push(`/analiz?start=${start}`);
-            }}><ChartNoAxesColumn size={16} /> Analiz</button>
-          </div>
+          <span className="week-range" aria-live="polite">{weekLabel(start)}</span>
         </div>
         <div className="header-end">
           <div className="weekly-progress" aria-label="Haftalık ilerleme">
@@ -756,13 +749,15 @@ export default function Planner({
                 {dayTasks.length} görev <span>·</span> {completed} tamamlandı
               </p>
             </div>
-            {!locked && (
+            {!locked && !showEmptyDay && (
               <button
+                type="button"
                 className="button primary add-task"
-                disabled={working || taskBusy}
+                aria-label="Görev ekle"
+                disabled={working}
                 onClick={() => setModal({ kind: "new" })}
               >
-                <Plus size={20} />
+                <Plus size={20} aria-hidden="true" />
                 <span>Görev ekle</span>
               </button>
             )}
@@ -787,23 +782,24 @@ export default function Planner({
                     <div className="skeleton skeleton-task" key={i} />
                   ))}
                 </div>
-              ) : !dayTasks.length ? (
+              ) : showEmptyDay ? (
                 <div className="empty-day">
                   <span className="empty-rule" />
                   <h3>Bugün için görev yok.</h3>
                   <p>
                     {locked
                       ? "Bu günün planı boş."
-                      : "İlk görevini ekle, günün planı burada şekillensin."}
+                      : "Eklediğin görevler burada görünür."}
                   </p>
                   {!locked && (
                     <button
-                      className="button secondary"
+                      type="button"
+                      className="button secondary add-task"
                       disabled={busy || taskBusy}
                       onClick={() => setModal({ kind: "new" })}
                     >
-                      <Plus size={18} />
-                      Görev ekle
+                      <Plus size={18} aria-hidden="true" />
+                      İlk görevini ekle
                     </button>
                   )}
                 </div>

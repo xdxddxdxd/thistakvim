@@ -1,17 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analysisLocation, analysisUrl } from "../lib/analysis-location";
 import { readNoteDraft, storeNoteDraft } from "../lib/note-drafts";
 
-test("analysis link preserves scope and course section", () => {
-  const state = { scope: "all" as const, section: "courses" as const };
-  const url = new URL(analysisUrl("2026-09-28", state), "http://localhost");
-  assert.deepEqual(analysisLocation(Object.fromEntries(url.searchParams)), state);
-});
-test("invalid analysis links fall back safely", () => {
-  assert.deepEqual(analysisLocation({ scope: "wrong", section: "unknown", filter: "{" }), { scope: "week", section: "summary" });
-  assert.deepEqual(analysisLocation({ section: "tasks", filter: "obsolete" }), { scope: "week", section: "summary" });
-});
 test("drafts retain empty edits and revision and are isolated by account and date", () => {
   const values = new Map<string, string>();
   const storage = { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => { values.set(k, v); }, removeItem: (k: string) => { values.delete(k); } };
